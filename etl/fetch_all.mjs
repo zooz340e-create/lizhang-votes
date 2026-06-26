@@ -110,7 +110,8 @@ async function fetchCounty(county) {
       history,
     });
   }
-  villages.sort((a, b) => (a.district + a.village).localeCompare(b.district + b.village, 'zh-Hant'));
+  // 照行政區代碼排（dept→li 皆零補位定寬），= 官方法定行政區順序
+  villages.sort((a, b) => a.region_code.localeCompare(b.region_code));
   return villages;
 }
 
