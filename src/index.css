@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap');
+
+/* 選舉海報 / 開票速報 配色 — 墨藍 × 競選紅 × 燙金 × 報紙米白 */
+@theme {
+  --color-ink: #0b1f3a;
+  --color-ink-soft: #1c3a5e;
+  --color-campaign: #c0392b;
+  --color-campaign-dark: #962d24;
+  --color-campaign-hero: #a8392f;
+  --color-gold: #d99a1c;
+  --color-gold-soft: #f0c14b;
+  --color-paper: #f6f1e7;
+  --color-paper-line: #e3d9c6;
+
+  --font-sans: 'Noto Sans TC', system-ui, sans-serif;
+  --font-serif: 'Noto Serif TC', serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  /* 報紙細格紋底 */
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(11, 31, 58, 0.035) 38px, rgba(11, 31, 58, 0.035) 39px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
