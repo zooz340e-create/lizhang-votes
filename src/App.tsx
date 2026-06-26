@@ -1,27 +1,13 @@
 import { useMemo, useState } from 'react';
 import data from './data/villages.json';
-import {
-  depositThreshold,
-  winInsight,
-  competition,
-  type Village,
-  type Confidence,
-  type OppTier,
-} from './lib/calc';
+import { depositThreshold, winInsight, competition, type Village, type OppTier } from './lib/calc';
 
 type Row = Village & { county: string; district: string };
 const villages = data.villages as Row[];
 const meta = data.meta;
-const DEFAULT = villages.find((v) => v.village === '西寶里') ?? villages[0];
 const COUNTIES = [...new Set(villages.map((v) => v.county))];
 
 const nf = (n: number) => n.toLocaleString('zh-TW');
-
-const CONFIDENCE: Record<Confidence, { text: string; cls: string }> = {
-  high: { text: '高可信 · 三屆完整紀錄', cls: 'bg-ink text-paper' },
-  medium: { text: '中可信 · 一屆紀錄', cls: 'bg-gold text-ink' },
-  low: { text: '低可信 · 僅人口推估', cls: 'bg-paper-line text-ink-soft' },
-};
 
 const TIER: Record<OppTier, { dot: string; cls: string; bar: string; sub: string }> = {
   大好機會: { dot: '🟢', cls: 'bg-emerald-600 text-white', bar: 'bg-emerald-500', sub: '新人空間很大' },
@@ -78,12 +64,14 @@ function Dropdown({
   options,
   big,
   label,
+  placeholder,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: Opt[];
   big?: boolean;
   label: string;
+  placeholder?: string;
 }) {
   return (
     <div className="relative">
@@ -91,8 +79,9 @@ function Dropdown({
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full cursor-pointer appearance-none border-[3px] border-ink bg-white pr-10 pl-4 font-serif font-black text-ink focus:border-campaign focus:outline-none ${big ? 'py-3.5 text-xl' : 'py-3 text-base'}`}
+        className={`w-full cursor-pointer appearance-none border-[3px] border-ink bg-white pr-10 pl-4 font-serif font-black ${value ? 'text-ink' : 'text-ink-soft/60'} focus:border-campaign focus:outline-none ${big ? 'py-3.5 text-xl' : 'py-3 text-base'}`}
       >
+        {placeholder && <option value="">{placeholder}</option>}
         {options.map((o) => {
           const val = typeof o === 'string' ? o : o.value;
           const lab = typeof o === 'string' ? o : o.label;
@@ -145,51 +134,55 @@ function Panel({ children, className = '' }: { children: React.ReactNode; classN
   );
 }
 
+function Guide({ county, district }: { county: string; district: string }) {
+  const step = !county ? '① 選擇縣市' : !district ? '② 選擇鄉鎮市區' : '③ 選擇村里';
+  return (
+    <div className="mt-6 border-[3px] border-dashed border-ink/30 p-8 text-center">
+      <div className="text-4xl">🗳️</div>
+      <p className="mt-3 font-serif text-lg font-black text-ink">跟著上面三步，選出你的里</p>
+      <p className="mt-1.5 text-sm text-ink-soft">
+        下一步：<b className="text-campaign">{step}</b>
+      </p>
+      <p className="mt-1 text-xs text-ink-soft/70">選好村里，就會跑出退保證金門檻、當選票數、參選機會。</p>
+    </div>
+  );
+}
+
 export default function App() {
-  const [county, setCounty] = useState(DEFAULT.county);
-  const [district, setDistrict] = useState(DEFAULT.district);
-  const [code, setCode] = useState(DEFAULT.region_code);
+  const [county, setCounty] = useState('');
+  const [district, setDistrict] = useState('');
+  const [code, setCode] = useState('');
   const [copied, setCopied] = useState(false);
 
   const districts = useMemo(
-    () => [...new Set(villages.filter((x) => x.county === county).map((x) => x.district))],
+    () => (county ? [...new Set(villages.filter((x) => x.county === county).map((x) => x.district))] : []),
     [county],
   );
   const districtVillages = useMemo(
-    () => villages.filter((x) => x.county === county && x.district === district),
+    () => (county && district ? villages.filter((x) => x.county === county && x.district === district) : []),
     [county, district],
   );
-  const v = useMemo(
-    () => districtVillages.find((x) => x.region_code === code) ?? districtVillages[0],
-    [districtVillages, code],
-  );
+  const v = useMemo(() => (code ? villages.find((x) => x.region_code === code) : undefined), [code]);
 
   function onCounty(c: string) {
-    const d = villages.find((x) => x.county === c)!.district;
     setCounty(c);
-    setDistrict(d);
-    setCode(villages.find((x) => x.county === c && x.district === d)!.region_code);
+    setDistrict('');
+    setCode('');
   }
   function onDistrict(d: string) {
     setDistrict(d);
-    setCode(villages.find((x) => x.county === county && x.district === d)!.region_code);
+    setCode('');
   }
 
-  const deposit = depositThreshold(v);
-  const win = winInsight(v);
-  const comp = competition(v);
-  const conf = CONFIDENCE[win.confidence];
-  const tier = TIER[comp.tier];
-  const histMax = win.histMaxWin ?? 1;
-
-  // 分區趣味數據（目前所選區之最）
+  // 分區之最（目前所選區；未選區時為 null）
   const best = useMemo(() => {
+    if (!districtVillages.length) return null;
     const rows = districtVillages.map((x) => ({ v: x, dep: depositThreshold(x).votes, c: competition(x) }));
     const minBy = <T,>(arr: T[], f: (t: T) => number) => arr.reduce((a, b) => (f(b) < f(a) ? b : a));
     const maxBy = <T,>(arr: T[], f: (t: T) => number) => arr.reduce((a, b) => (f(b) > f(a) ? b : a));
     const hist = rows.filter((r) => r.c.hasHistory);
-    const aged = hist.filter((r) => r.c.incumbentAge);
     const safe = hist.length ? hist : rows;
+    const aged = hist.filter((r) => r.c.incumbentAge);
     return {
       cheapDeposit: minBy(rows, (r) => r.dep),
       easyWin: minBy(safe, (r) => r.c.climbVotes),
@@ -198,15 +191,19 @@ export default function App() {
     };
   }, [districtVillages]);
 
-  const shareText = useMemo(
-    () =>
+  const shareText = useMemo(() => {
+    if (!v) return '';
+    const d = depositThreshold(v);
+    const w = winInsight(v);
+    const c = competition(v);
+    return (
       `${v.county}${v.district}${v.village}｜選里長要幾票？\n` +
-      `🛟 保住 5,000 元保證金：至少 ${nf(deposit.votes)} 票\n` +
-      (win.lastWinner ? `🏆 上屆當選 ${win.lastWinner.name} 拿 ${nf(win.lastWinner.votes)} 票\n` : '') +
-      `🎯 參選機會：${tier.dot} ${comp.tier}（指數 ${comp.score}）\n` +
-      `你家那個里要幾票？來算 👉`,
-    [v, deposit.votes, win.lastWinner, comp.tier, comp.score, tier.dot],
-  );
+      `🛟 保住 5,000 元保證金：至少 ${nf(d.votes)} 票\n` +
+      (w.lastWinner ? `🏆 上屆當選 ${w.lastWinner.name} 拿 ${nf(w.lastWinner.votes)} 票\n` : '') +
+      `🎯 參選機會：${TIER[c.tier].dot} ${c.tier}（指數 ${c.score}）\n` +
+      `你家那個里要幾票？來算 👉`
+    );
+  }, [v]);
 
   function copy() {
     navigator.clipboard?.writeText(shareText);
@@ -243,23 +240,36 @@ export default function App() {
         </div>
       </header>
 
-      {/* 三層選單：縣市 → 區 → 里 */}
+      {/* 引導式三層選單：縣市 → 區 → 里（逐步出現）*/}
       <div className="mt-5 space-y-2">
-        <label className="block font-serif text-sm font-bold tracking-wide text-ink-soft">① 選你的里</label>
-        <div className="grid grid-cols-2 gap-2">
-          <Dropdown label="縣市" value={county} onChange={onCounty} options={COUNTIES} />
-          <Dropdown label="鄉鎮市區" value={district} onChange={onDistrict} options={districts} />
-        </div>
-        <Dropdown
-          label="村里"
-          big
-          value={v.region_code}
-          onChange={setCode}
-          options={districtVillages.map((x) => ({ value: x.region_code, label: x.village }))}
-        />
+        <label className="block font-serif text-sm font-bold tracking-wide text-ink-soft">跟著選你的里 👇</label>
+        <Dropdown label="縣市" placeholder="① 選擇縣市" value={county} onChange={onCounty} options={COUNTIES} />
+        {county && (
+          <Dropdown label="鄉鎮市區" placeholder="② 選擇鄉鎮市區" value={district} onChange={onDistrict} options={districts} />
+        )}
+        {county && district && (
+          <Dropdown
+            label="村里"
+            big
+            placeholder="③ 選擇村里"
+            value={code}
+            onChange={setCode}
+            options={districtVillages.map((x) => ({ value: x.region_code, label: x.village }))}
+          />
+        )}
       </div>
 
-      <div className="mt-5 space-y-5">
+      {!v && <Guide county={county} district={district} />}
+
+      {v &&
+        (() => {
+          const deposit = depositThreshold(v);
+          const win = winInsight(v);
+          const comp = competition(v);
+          const tier = TIER[comp.tier];
+          const histMax = win.histMaxWin ?? 1;
+          return (
+            <div className="mt-5 space-y-5">
         {/* ② 退保證金 — 主角卡 */}
         <Panel className="relative overflow-hidden bg-campaign-hero! text-paper">
           <BallotStamp className="pointer-events-none absolute -top-6 -right-6 h-40 w-40 text-paper/10" />
@@ -285,10 +295,12 @@ export default function App() {
         <Panel className="relative overflow-hidden">
           <ElectionStamp className="pointer-events-none absolute -top-6 -right-6 h-40 w-40 text-campaign opacity-20" />
           <div className="relative">
-          <div className="flex items-center justify-between">
-            <SectionTag no="③" label="當選要幾票" />
-            <span className={`px-2 py-0.5 text-[11px] font-bold tracking-wide ${conf.cls}`}>{conf.text}</span>
-          </div>
+          <SectionTag no="③" label="當選要幾票" />
+          {win.confidence !== 'high' && (
+            <p className="mt-1.5 inline-block bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+              ⚠ 此里僅 {v.history?.length ?? 0} 屆資料，參考用
+            </p>
+          )}
 
           {/* 過半參考線 */}
           <div className="mt-4 flex items-baseline justify-between border-b-[3px] border-dashed border-gold pb-2">
@@ -441,11 +453,12 @@ export default function App() {
           </details>
         </Panel>
 
-        {/* 分區趣味數據：大雅區之最 */}
+        {/* 分區趣味數據：目前所選區之最 */}
+        {best && (
         <section className="border-[3px] border-ink bg-white p-5 shadow-[5px_5px_0_0_var(--color-ink)]">
           <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center bg-gold font-serif text-sm font-black text-ink">★</span>
-            <h2 className="font-serif text-xl font-black text-ink">{district}之最</h2>
+            <h2 className="font-serif text-xl font-black text-ink">{v.district}之最</h2>
           </div>
           <p className="mt-1 text-xs text-ink-soft/70">同區跨里 PK，點一下跳到那個里</p>
           <div className="mt-3 divide-y divide-paper-line">
@@ -479,6 +492,7 @@ export default function App() {
             ))}
           </div>
         </section>
+        )}
 
         {/* 分享 */}
         <section className="border-[3px] border-ink bg-ink p-5 text-paper">
@@ -507,7 +521,9 @@ export default function App() {
           <p>資料來源：{meta.election_source}。{meta.scope}。</p>
           <p>退保證金門檻依官方選舉人數試算；參選機會與當選票數為估算，僅供參考，不構成任何當選保證。</p>
         </footer>
-      </div>
+            </div>
+          );
+        })()}
     </div>
   );
 }
