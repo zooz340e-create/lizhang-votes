@@ -10,10 +10,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, '..', 'src', 'data', 'villages.json');
 const BASE = 'https://db.cec.gov.tw/static/elections/data';
 
-// Beta 範圍：臺中市 + 彰化縣
+// Beta 範圍：臺中市 + 彰化縣 + 宜蘭縣
 const COUNTIES = [
   { name: '臺中市', file: '66_000_00_000_0000.json' },
   { name: '彰化縣', file: '10_007_00_000_0000.json' },
+  { name: '宜蘭縣', file: '10_002_00_000_0000.json' },
 ];
 const ELECTIONS = [
   { year: 2022, themeId: '0bd11a4b3f092aae2811741428ec3e3d' },
@@ -125,7 +126,7 @@ async function main() {
   }
   const out = {
     meta: {
-      scope: 'Beta：臺中市 + 彰化縣',
+      scope: 'Beta：臺中市 + 彰化縣 + 宜蘭縣',
       election_source: '中央選舉委員會 選舉資料庫（2014/2018/2022 村里長選舉）',
       electorate_note: '選舉人數＝中選會最近一屆官方數字；退保證金門檻＝選舉人數 × 10%（《選罷法》）。',
     },
