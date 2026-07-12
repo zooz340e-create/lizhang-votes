@@ -45,9 +45,9 @@ query_rows("77132",
   → 每里一筆：`votable_population`(選舉人數)、`vote_to_elect`(投票率%)、`valid_ticket`(有效票)、
     `invalid_ticket`、`cand_num`(候選人數，=1 即同額)、`elected_num`(應選=1)。
 
-**擴台做法**：縣市 prv_code 表在 `.../areas/ELC/V0/00/<themeId>/C/00_000_00_000_0000.json`；
-各縣市的區清單在 `.../D/<prv>_000_00_000_0000.json`。把 fetch_elections.mjs 的
-`TAICHUNG_FILE`(66...) 與 `DEPT_DAYA`(180) 改成迴圈跑全台即可。
+**擴台做法**：✅ 已完成（2026-07-12）。`etl/fetch_all.mjs` 從
+`.../areas/ELC/V0/00/<themeId>/C/00_000_00_000_0000.json` 動態抓 22 縣市清單，
+迴圈跑全臺，輸出 `public/data/index.json` + `public/data/county/<code>.json`（前端按需載入）。
 
 > 備援來源：各區公所零散開放資料（如高雄鳥松區 Twinkle dataset `166436`），覆蓋不齊，僅 fallback。
 

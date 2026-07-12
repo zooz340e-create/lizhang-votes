@@ -1,11 +1,6 @@
-import { useMemo, useState } from 'react';
-import data from './data/villages.json';
-import { depositThreshold, winInsight, competition, type Village, type OppTier } from './lib/calc';
-
-type Row = Village & { county: string; district: string };
-const villages = data.villages as Row[];
-const meta = data.meta;
-const COUNTIES = [...new Set(villages.map((v) => v.county))];
+import { useEffect, useMemo, useState } from 'react';
+import { depositThreshold, winInsight, competition, type OppTier } from './lib/calc';
+import { loadIndex, loadCounty, type VillageRow, type DataIndex } from './lib/data';
 
 const nf = (n: number) => n.toLocaleString('zh-TW');
 
@@ -149,20 +144,53 @@ function Guide({ county, district }: { county: string; district: string }) {
 }
 
 export default function App() {
-  const [county, setCounty] = useState('');
+  const [index, setIndex] = useState<DataIndex>();
+  const [county, setCounty] = useState(''); // 縣市代碼（例：臺中市 66000）
+  const [rows, setRows] = useState<VillageRow[]>([]); // 所選縣市的全部里
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [district, setDistrict] = useState('');
   const [code, setCode] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const districts = useMemo(
-    () => (county ? [...new Set(villages.filter((x) => x.county === county).map((x) => x.district))] : []),
-    [county],
-  );
+  // 首屏只載縣市清單（約 2KB）
+  useEffect(() => {
+    loadIndex()
+      .then(setIndex)
+      .catch(() => setError('縣市清單載入失敗，請重新整理頁面'));
+  }, []);
+
+  // 選了縣市才載該縣市資料（有快取，切回來不重抓）
+  useEffect(() => {
+    if (!county) {
+      setRows([]);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    loadCounty(county)
+      .then((vs) => {
+        if (!cancelled) setRows(vs);
+      })
+      .catch(() => {
+        if (!cancelled) setError('資料載入失敗，請檢查網路後再選一次');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [county]);
+
+  const meta = index?.meta;
+  const districts = useMemo(() => [...new Set(rows.map((x) => x.district))], [rows]);
   const districtVillages = useMemo(
-    () => (county && district ? villages.filter((x) => x.county === county && x.district === district) : []),
-    [county, district],
+    () => (district ? rows.filter((x) => x.district === district) : []),
+    [rows, district],
   );
-  const v = useMemo(() => (code ? villages.find((x) => x.region_code === code) : undefined), [code]);
+  const v = useMemo(() => (code ? rows.find((x) => x.region_code === code) : undefined), [rows, code]);
 
   function onCounty(c: string) {
     setCounty(c);
@@ -243,8 +271,22 @@ export default function App() {
       {/* 引導式三層選單：縣市 → 區 → 里（逐步出現）*/}
       <div className="mt-5 space-y-2">
         <label className="block font-serif text-sm font-bold tracking-wide text-ink-soft">跟著選你的里 👇</label>
-        <Dropdown label="縣市" placeholder="① 選擇縣市" value={county} onChange={onCounty} options={COUNTIES} />
-        {county && (
+        <Dropdown
+          label="縣市"
+          placeholder={index ? '① 選擇縣市' : '縣市清單載入中…'}
+          value={county}
+          onChange={onCounty}
+          options={index?.counties.map((c) => ({ value: c.code, label: c.name })) ?? []}
+        />
+        {error && (
+          <p className="border-[3px] border-campaign bg-campaign/5 px-3 py-2 text-sm font-bold text-campaign">
+            ⚠ {error}
+          </p>
+        )}
+        {county && loading && (
+          <p className="px-1 py-2 text-sm font-medium text-ink-soft">📦 正在載入這個縣市的資料…</p>
+        )}
+        {county && !loading && rows.length > 0 && (
           <Dropdown label="鄉鎮市區" placeholder="② 選擇鄉鎮市區" value={district} onChange={onDistrict} options={districts} />
         )}
         {county && district && (
@@ -518,7 +560,7 @@ export default function App() {
 
         {/* 免責 */}
         <footer className="space-y-1 px-1 text-center text-[11px] leading-relaxed text-ink-soft/70">
-          <p>資料來源：{meta.election_source}。{meta.scope}。</p>
+          <p>資料來源：{meta?.election_source ?? '中央選舉委員會'}。{meta?.scope ?? ''}。</p>
           <p>退保證金門檻依官方選舉人數試算；參選機會與當選票數為估算，僅供參考，不構成任何當選保證。</p>
         </footer>
             </div>

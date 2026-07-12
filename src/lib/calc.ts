@@ -35,8 +35,8 @@ export interface ElectionResult {
 export interface Village {
   region_code: string;
   village: string;
-  pop_total: number;
-  pop_eligible_est: number; // 20 歲以上人口（選舉人數近似值）
+  pop_total?: number; // 總人口（ETL 現版未輸出，僅早期資料有）
+  pop_eligible_est: number; // 選舉人數（中選會最近一屆官方數字）
   history?: ElectionResult[]; // 由新到舊排序
 }
 

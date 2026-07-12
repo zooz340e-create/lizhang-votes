@@ -4,9 +4,9 @@
 以及在地**競爭狀況**（現任連任幾屆、是否同額競選）。定位是行銷品牌的免費引流小工具，
 走「開票速報／競選海報」視覺風格。
 
-> **線上 Beta：https://lizhang-votes.vercel.app**
-> 範圍：**臺中市 + 彰化縣**（共 1,217 個里），三層選單（縣市→區→里）。
-> 架構對齊全台版，擴大只需在 `etl/fetch_all.mjs` 的 `COUNTIES` 加縣市再重跑。
+> **線上：https://lizhang-votes.vercel.app**
+> 範圍：**全臺 22 縣市，共 7,973 個里**，三層選單（縣市→區→里）。
+> 縣市清單由中選會 API 動態取得，資料按縣市拆檔、前端按需載入（首屏只載 4KB 索引）。
 
 ## 三張卡怎麼來的
 
@@ -66,28 +66,27 @@ npm install
 npm run dev               # 本機預覽 http://localhost:5173
 npm test                  # calc 單元測試（Node 原生，免轉譯）
 npm run build             # 型別檢查 + 打包 dist/
-node etl/fetch_elections.mjs   # 重抓中選會得票，併進 src/data/daya.json
-node etl/accuracy.mjs          # 印選舉人數推估 vs 官方 的準度驗證表
+node etl/fetch_all.mjs    # 重抓全臺 22 縣市 → public/data/（縣市清單自動取得）
 ```
 
 部署：`dist/` 為純靜態檔，直接丟 Vercel（與素材大師同套流程）。
 
 ## 檔案結構
 
-- `src/data/daya.json` — 成品資料（前端唯一來源）：每里人口、選舉人數推估、三屆得票 history。
+- `public/data/index.json` — 縣市清單 + meta（首屏只載這個，約 4KB）。
+- `public/data/county/<code>.json` — 各縣市完整里資料（選了縣市才載，20KB–840KB）。
+- `src/lib/data.ts` — 資料載入層：按需 fetch + 記憶體快取。
 - `src/lib/calc.ts` — 三個計算模組（純函式）：`depositThreshold` / `winInsight` / `competition`。
 - `src/lib/calc.test.ts` — 6 個單元測試。
 - `src/App.tsx` — 單頁 UI（開票速報風）。`src/index.css` — 設計 token（墨藍/競選紅/燙金/報紙米白）。
-- `etl/fetch_elections.mjs` — 抓中選會得票。`etl/accuracy.mjs` — 準度驗證。`etl/notes.md` — 資料路徑筆記。
+- `etl/fetch_all.mjs` — 抓全臺（縣市清單動態取得）。`etl/notes.md` — 資料路徑筆記。
 
 ## 待辦
 
-1. **加縣市/區/里三層選單**（目前只有臺中大雅一組，選單框架先擺著）。
-2. **人口資料更新**：改抓戶政司最新月份或選舉當月。
-3. **擴大到全台**：批次跑 ETL 產各區 JSON（中選會靜態 JSON 路徑見 `etl/notes.md`，全台可直接套）。
-4. **分區趣味數據**：已做「大雅區之最」（保證金最好退/當選門檻最低/機會最大/最資深現任，可點跳轉）。
-   擴台後每個區都自動生這區的之最；全台級再做「全台之最」「全台共幾里」「長期同額比例」。
-5. **行銷加值**：分享卡圖、SEO、掛品牌站、Vercel 部署。
+1. ~~加縣市/區/里三層選單~~ ✅
+2. ~~擴大到全台~~ ✅（2026-07-12：全臺 22 縣市 7,973 里，資料按縣市拆檔按需載入）
+3. **全台級趣味數據**：「全台之最」「全台共幾里」「長期同額比例」（各區之最已自動生成）。
+4. **行銷加值**：分享卡圖、SEO、掛品牌站。
 6. **戰鬥力卡（構想，待討論）**：把里長／政治人物做成「戰鬥小卡」，依挑戰難度分級
    （好對付 = R、很難 = SSR/UR）。先記著，之後再設計。
 7. **票數生活化比喻（待討論）**：把門檻票數換算成親民說法，例如「≈ 社區 N 戶人家都投你」

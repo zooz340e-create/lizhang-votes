@@ -1,31 +1,38 @@
-// 從中選會選舉資料庫（公開靜態 JSON）抓「臺中市 + 彰化縣」所有區/里、三屆里長得票，
-// 全部用中選會官方數字（含官方選舉人數 votable_population），輸出 src/data/villages.json。
+// 從中選會選舉資料庫（公開靜態 JSON）抓「全臺 22 縣市」所有區/里、三屆里長得票，
+// 全部用中選會官方數字（含官方選舉人數 votable_population）。
+// 縣市清單直接從中選會 API 動態取得（官方法定順序），不再手動維護。
+//
+// 輸出（前端按需載入，避免全臺資料打包進 bundle）：
+//   public/data/index.json          — 縣市清單 + meta（首屏只載這個，約 2KB）
+//   public/data/county/<code>.json  — 各縣市完整里資料（選了縣市才載）
+//
 // 用法：node etl/fetch_all.mjs   （Node 18+ 內建 fetch）
 
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUT = join(__dirname, '..', 'src', 'data', 'villages.json');
+const OUT_DIR = join(__dirname, '..', 'public', 'data');
 const BASE = 'https://db.cec.gov.tw/static/elections/data';
 
-// Beta 範圍：臺中市 + 彰化縣 + 宜蘭縣
-const COUNTIES = [
-  { name: '臺中市', file: '66_000_00_000_0000.json' },
-  { name: '彰化縣', file: '10_007_00_000_0000.json' },
-  { name: '宜蘭縣', file: '10_002_00_000_0000.json' },
-];
 const ELECTIONS = [
   { year: 2022, themeId: '0bd11a4b3f092aae2811741428ec3e3d' },
   { year: 2018, themeId: '80325f73197f1d752b987778c725d20d' },
   { year: 2014, themeId: 'f29f60196b2b39ef6ac298106f927738' },
 ];
 
-async function getJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`);
-  return res.json();
+async function getJson(url, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`);
+      return await res.json();
+    } catch (e) {
+      if (i === retries - 1) throw e;
+      await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+    }
+  }
 }
 
 function partyToken(name = '') {
@@ -41,17 +48,29 @@ function partyToken(name = '') {
 const flat = (obj) => Object.values(obj).flat();
 const vkey = (r) => `${r.dept_code}_${r.li_code}`;
 
+// 中選會官方縣市清單（回傳順序即官方法定順序：直轄市→縣→市）
+async function fetchCounties() {
+  const rows = flat(await getJson(`${BASE}/areas/ELC/V0/00/${ELECTIONS[0].themeId}/C/00_000_00_000_0000.json`));
+  return rows.map((r) => ({
+    name: r.area_name,
+    code: `${r.prv_code}${r.city_code}`, // 例：臺中市 66000、彰化縣 10007
+    file: `${r.prv_code}_${r.city_code}_00_000_0000.json`,
+  }));
+}
+
 async function fetchCounty(county) {
   // 區/鄉鎮 代碼 → 名稱
   const areasD = await getJson(`${BASE}/areas/ELC/V0/00/${ELECTIONS[0].themeId}/D/${county.file}`);
   const deptName = {};
   for (const a of flat(areasD)) deptName[a.dept_code] = a.area_name;
 
-  // 各屆：里 → 結果
+  // 各屆：里 → 結果（tickets 與 profiles 並行抓）
   const perYear = {};
   for (const e of ELECTIONS) {
-    const tickets = flat(await getJson(`${BASE}/tickets/ELC/V0/00/${e.themeId}/L/${county.file}`));
-    const profiles = flat(await getJson(`${BASE}/profiles/ELC/V0/00/${e.themeId}/L/${county.file}`));
+    const [tickets, profiles] = await Promise.all([
+      getJson(`${BASE}/tickets/ELC/V0/00/${e.themeId}/L/${county.file}`).then(flat),
+      getJson(`${BASE}/profiles/ELC/V0/00/${e.themeId}/L/${county.file}`).then(flat),
+    ]);
     const prof = {};
     for (const p of profiles) prof[vkey(p)] = p;
 
@@ -106,7 +125,7 @@ async function fetchCounty(county) {
       county: county.name,
       district: deptName[base.dept] ?? base.dept,
       village: base.villageName,
-      region_code: `${county.file.slice(0, 6).replace('_', '')}_${base.dept}_${base.li}`,
+      region_code: `${county.code}_${base.dept}_${base.li}`,
       pop_eligible_est: electorate ?? 0,
       history,
     });
@@ -117,23 +136,33 @@ async function fetchCounty(county) {
 }
 
 async function main() {
-  let all = [];
-  for (const c of COUNTIES) {
-    process.stdout.write(`抓 ${c.name}… `);
-    const vs = await fetchCounty(c);
-    console.log(`${vs.length} 個里`);
-    all = all.concat(vs);
+  const counties = await fetchCounties();
+  console.log(`中選會縣市清單：${counties.length} 個\n`);
+
+  mkdirSync(join(OUT_DIR, 'county'), { recursive: true });
+
+  const index = [];
+  let total = 0;
+  for (const c of counties) {
+    process.stdout.write(`抓 ${c.name}（${c.code}）… `);
+    const villages = await fetchCounty(c);
+    console.log(`${villages.length} 個里`);
+    writeFileSync(join(OUT_DIR, 'county', `${c.code}.json`), JSON.stringify({ county: c.name, villages }), 'utf8');
+    index.push({ code: c.code, name: c.name, villages: villages.length });
+    total += villages.length;
   }
+
   const out = {
     meta: {
-      scope: 'Beta：臺中市 + 彰化縣 + 宜蘭縣',
+      scope: `全臺 ${counties.length} 縣市，共 ${total.toLocaleString('zh-TW')} 個村里`,
       election_source: '中央選舉委員會 選舉資料庫（2014/2018/2022 村里長選舉）',
       electorate_note: '選舉人數＝中選會最近一屆官方數字；退保證金門檻＝選舉人數 × 10%（《選罷法》）。',
+      generated_at: new Date().toISOString().slice(0, 10),
     },
-    villages: all,
+    counties: index,
   };
-  writeFileSync(OUT, JSON.stringify(out), 'utf8');
-  console.log(`\n總計 ${all.length} 個里 → ${OUT}`);
+  writeFileSync(join(OUT_DIR, 'index.json'), JSON.stringify(out), 'utf8');
+  console.log(`\n總計 ${total} 個里 → ${OUT_DIR}`);
 }
 
 main().catch((e) => {
