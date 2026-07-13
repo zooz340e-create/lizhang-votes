@@ -1,5 +1,6 @@
 node_modules/
 dist/
+plans/
 .playwright-mcp/
 *.local
 .DS_Store

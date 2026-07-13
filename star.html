@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⭐</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>素人里長繁星計畫 — 投一枚硬幣，換一個更好的＿＿里</title>
+    <meta
+      name="description"
+      content="115 年地方選舉，陪素人從「有想法」走到「敢登記」。60 秒定位影片、問卷客廳會、聯合造勢——四年前我也是你，732 票的經驗全部給你。"
+    />
+    <style>
+      :root {
+        --ink: #1c2437;
+        --ink-soft: #4a5268;
+        --campaign: #c0392b;
+        --campaign-dark: #9c2b20;
+        --gold: #b8912f;
+        --gold-soft: #d9c48a;
+        --paper: #f6f2e9;
+        --paper-line: #e3dcc9;
+        --white: #fffdf8;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      /* 刻意單一視覺：與里長票數計算機同一套「開票速報／競選海報」品牌 */
+      html { background: var(--paper); }
+      body {
+        font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+        color: var(--ink); line-height: 1.75; -webkit-font-smoothing: antialiased;
+      }
+      .serif { font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif; }
+      .wrap { max-width: 680px; margin: 0 auto; padding: 20px 16px 60px; }
+
+      a.btn, button.btn {
+        display: block; width: 100%; border: 3px solid var(--ink); cursor: pointer;
+        padding: 14px 18px; text-align: center; text-decoration: none;
+        font-family: inherit; font-size: 17px; font-weight: 900; letter-spacing: .15em;
+        box-shadow: 4px 4px 0 0 var(--ink); transition: transform .12s, box-shadow .12s;
+      }
+      a.btn:active, button.btn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 0 var(--ink); }
+      .btn-red { background: var(--campaign); color: var(--paper); }
+      .btn-ink { background: var(--ink); color: var(--paper); }
+
+      header.masthead { border: 3px solid var(--ink); background: var(--ink); color: var(--paper); }
+      .mast-top {
+        display: flex; justify-content: space-between; padding: 5px 14px;
+        border-bottom: 1px solid rgba(246,242,233,.3);
+        font-size: 11px; letter-spacing: .3em; color: var(--gold-soft); font-weight: 500;
+      }
+      .mast-main { padding: 26px 18px 24px; text-align: center; }
+      .mast-main h1 { font-size: 32px; font-weight: 900; line-height: 1.35; }
+      .mast-main h1 .blank { color: var(--gold-soft); border-bottom: 3px solid var(--gold-soft); padding: 0 8px; }
+      .mast-main p.sub { margin-top: 12px; font-size: 15px; color: rgba(246,242,233,.85); }
+
+      /* ── 販賣機 ── */
+      .vending {
+        margin-top: 22px; border: 3px solid var(--ink); background: var(--campaign);
+        box-shadow: 5px 5px 0 0 var(--ink); padding: 18px 16px 20px; color: var(--paper);
+      }
+      .vending .machine-top {
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 2px dashed rgba(246,242,233,.4); padding-bottom: 10px; margin-bottom: 14px;
+      }
+      .vending .machine-top .name { font-size: 18px; font-weight: 900; letter-spacing: .2em; }
+      .vending .coin-slot {
+        width: 10px; height: 26px; background: var(--ink); border: 2px solid var(--paper);
+        border-radius: 3px; flex: none;
+      }
+      .vending .screen {
+        border: 3px solid var(--ink); background: var(--paper); color: var(--ink);
+        min-height: 96px; padding: 12px 14px; font-size: 14px;
+      }
+      .vending .screen b.price { display: block; font-size: 22px; font-weight: 900; color: var(--campaign); }
+      .vending .keys { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+      .vending .keys button {
+        border: 2.5px solid var(--ink); background: var(--paper); color: var(--ink);
+        font-family: inherit; font-weight: 900; font-size: 13px; padding: 10px 2px; cursor: pointer;
+        box-shadow: 3px 3px 0 0 var(--ink); transition: transform .1s, box-shadow .1s;
+      }
+      .vending .keys button:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 0 var(--ink); }
+      .vending .keys button[aria-pressed="true"] { background: var(--gold); }
+      .vending p.note { margin-top: 12px; font-size: 12px; color: rgba(246,242,233,.85); }
+
+      section.panel {
+        border: 3px solid var(--ink); background: var(--white);
+        padding: 22px 18px; margin-top: 24px; box-shadow: 5px 5px 0 0 var(--ink);
+      }
+      .tag { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+      .tag .no {
+        width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+        background: var(--campaign); color: var(--paper); font-weight: 900; font-size: 14px; flex: none;
+      }
+      .tag h2 { font-size: 21px; font-weight: 900; letter-spacing: .04em; }
+
+      .bignum { font-size: 56px; font-weight: 900; line-height: 1; color: var(--campaign); }
+      .bignum small { font-size: 20px; color: var(--ink); }
+      .story-nums { display: flex; gap: 20px; flex-wrap: wrap; margin: 16px 0 6px; }
+      .story-nums .cell b { display: block; font-size: 30px; font-weight: 900; color: var(--campaign); font-variant-numeric: tabular-nums; }
+      .story-nums .cell span { font-size: 12px; color: var(--ink-soft); }
+      .src { font-size: 12px; color: var(--ink-soft); border-top: 1px solid var(--paper-line); padding-top: 8px; margin-top: 14px; }
+
+      ul.walls { list-style: none; margin-top: 4px; }
+      ul.walls li { padding: 12px 0; border-bottom: 1px solid var(--paper-line); font-size: 15px; }
+      ul.walls li:last-child { border: none; }
+      ul.walls b { display: block; font-size: 16px; }
+      ul.walls b::before { content: "🧱 "; }
+
+      .services { list-style: none; counter-reset: s; margin-top: 4px; }
+      .services li { counter-increment: s; display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--paper-line); font-size: 14px; }
+      .services li:last-child { border: none; }
+      .services li::before {
+        content: counter(s); flex: none; width: 26px; height: 26px; margin-top: 2px;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--ink); color: var(--paper); font-weight: 900; font-size: 13px;
+      }
+      .services b { display: block; font-size: 16px; }
+
+      .trust { border-left: 4px solid var(--gold); background: var(--paper); padding: 12px 16px; margin-top: 16px; font-size: 14px; }
+      .trust b { color: var(--campaign); }
+
+      table.fees { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 14px; }
+      table.fees th { background: var(--ink); color: var(--paper); font-size: 12px; letter-spacing: .15em; padding: 8px; text-align: left; }
+      table.fees td { padding: 10px 8px; border-bottom: 1px solid var(--paper-line); vertical-align: top; }
+      table.fees td.price { font-weight: 900; white-space: nowrap; color: var(--campaign); font-variant-numeric: tabular-nums; }
+
+      ol.timeline { list-style: none; margin-top: 4px; }
+      ol.timeline li { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--paper-line); font-size: 14px; }
+      ol.timeline li:last-child { border: none; }
+      ol.timeline .when { flex: none; width: 108px; font-weight: 900; color: var(--campaign); }
+
+      .stamp {
+        display: inline-block; transform: rotate(-5deg);
+        border: 2.5px solid var(--campaign); color: var(--campaign);
+        padding: 2px 10px; font-size: 12px; font-weight: 900; letter-spacing: .3em; margin-bottom: 10px;
+      }
+
+      .cta-zone { margin-top: 26px; display: grid; gap: 14px; }
+      footer { margin-top: 30px; text-align: center; font-size: 12px; color: var(--ink-soft); }
+      footer .who { font-weight: 900; font-size: 14px; color: var(--ink); letter-spacing: .1em; }
+      footer p { margin-top: 4px; }
+      footer a { color: var(--ink-soft); }
+
+      @media (max-width: 480px) {
+        .mast-main h1 { font-size: 26px; }
+        .vending .keys { grid-template-columns: repeat(5, 1fr); gap: 5px; }
+        .vending .keys button { font-size: 11px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        a.btn, button.btn, .vending .keys button { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="masthead">
+        <div class="mast-top"><span>素 人 里 長 繁 星 計 畫</span><span>115 年地方選舉</span></div>
+        <div class="mast-main serif">
+          <h1>投一枚硬幣，<br />換一個更好的<span class="blank">＿＿</span>里</h1>
+          <p class="sub">沒有黨機器、沒有樁腳、沒有幕僚的素人，<br />也應該有一條公平的起跑線。</p>
+        </div>
+      </header>
+
+      <!-- 新政治販賣機 -->
+      <div class="vending" id="vending">
+        <div class="machine-top">
+          <span class="name serif">新政治販賣機</span>
+          <span class="coin-slot" aria-hidden="true"></span>
+        </div>
+        <div class="screen" id="vscreen" aria-live="polite">
+          <b class="price serif">按一個金額 👇</b>
+          每一枚硬幣，都直接變成素人候選人用得到的東西。
+        </div>
+        <div class="keys" role="group" aria-label="投幣金額">
+          <button data-k="100">100</button>
+          <button data-k="300">300</button>
+          <button data-k="500">500</button>
+          <button data-k="1000">1000</button>
+          <button data-k="5000">5000</button>
+        </div>
+        <p class="note">
+          💡 信任設計：你的硬幣資助的是「繁星計畫」的輔導工作，<b>不進任何候選人的口袋</b>——
+          候選人的政治獻金依法須經監察院許可設專戶，我們不碰、也不代收。
+        </p>
+      </div>
+
+      <!-- 故事 -->
+      <section class="panel">
+        <div class="tag"><span class="no serif">①</span><h2 class="serif">四年前，我也是你</h2></div>
+        <p style="font-size:15px">
+          2022 年，我在彰化市台鳳里以無黨籍參選里長。沒有黨機器、沒有樁腳網絡、沒有專業幕僚，
+          26 歲，三人戰局。
+        </p>
+        <div class="story-nums serif">
+          <div class="cell"><b>732</b><span>得票數</span></div>
+          <div class="cell"><b>28.1%</b><span>得票率</span></div>
+          <div class="cell"><b>2 / 3</b><span>三人中第二，超過政黨提名人</span></div>
+        </div>
+        <p style="font-size:15px">
+          我落選了。但這個數字告訴我：<b style="color:var(--campaign)">素人只要有對的方法，選民就會看見你。</b>
+          那些我用一整場選戰換來的方法，你不必再重新摸索一次。
+        </p>
+        <p class="src">資料來源：中央選舉委員會選舉資料庫（111 年村里長選舉・彰化市台鳳里）。</p>
+      </section>
+
+      <!-- 三道牆 -->
+      <section class="panel">
+        <div class="tag"><span class="no serif">②</span><h2 class="serif">擋住素人的三道牆</h2></div>
+        <ul class="walls">
+          <li><b>不知道怎麼被認識</b>大多數人不是輸在能力，是卡在「沒有人知道你是誰」。</li>
+          <li><b>資源不對等</b>政黨候選人有完整後勤，素人只能單打獨鬥。</li>
+          <li><b>5 萬元保證金</b>登記要繳新臺幣 5 萬元，得票未達門檻就沒收——這是第一道、也是最現實的一道牆。</li>
+        </ul>
+      </section>
+
+      <!-- 王牌：計算機導流 -->
+      <section class="panel" style="background:var(--ink); color:var(--paper)">
+        <span class="stamp" style="border-color:var(--gold-soft); color:var(--gold-soft)">免 費 工 具</span>
+        <h2 class="serif" style="font-size:21px; font-weight:900">先別急著相信我——<br />先查你自己的里</h2>
+        <p style="margin-top:10px; font-size:14px; color:rgba(246,242,233,.85)">
+          我們把全臺 <b class="serif" style="color:var(--gold-soft)">22 縣市、7,973 個里</b>的三屆里長選舉資料做成了免費計算機：
+          你的里要幾票才能保住保證金、上屆當選要幾票、你的參選機會指數幾分——一分鐘看完。
+        </p>
+        <p style="margin-top:10px; font-size:13px; color:rgba(246,242,233,.7)">
+          例：台鳳里選舉人數 4,195 人，拿 420 票就能保住 5 萬元保證金。你的里呢？
+        </p>
+        <div style="margin-top:16px">
+          <a class="btn btn-red serif" href="/" style="border-color:var(--paper)">🗳️ 查我家的里要幾票</a>
+        </div>
+      </section>
+
+      <!-- 五大服務 -->
+      <section class="panel">
+        <div class="tag"><span class="no serif">③</span><h2 class="serif">五大服務</h2></div>
+        <ol class="services">
+          <li><div><b>定位</b>第一支 60 秒形象影片，量身打造你的「黃金一分鐘」。</div></li>
+          <li><div><b>調查</b>問卷 × 每週客廳會，挖出你的里最在乎的前三件事。</div></li>
+          <li><div><b>目標</b>以「保證金發還門檻」為底線目標——你的里要幾票，計算機算給你看，我們一起把它變成拜訪計畫。</div></li>
+          <li><div><b>造勢</b>聯合造勢串連、短影音系列，選前之夜一起被看見。</div></li>
+          <li><div><b>陪伴</b>選戰路上，唯一從頭到尾都在你旁邊的人。</div></li>
+        </ol>
+        <div class="trust">
+          <b>為什麼是「保證金發還門檻」而不是「得票率 10%」？</b><br />
+          門檻的算法是「選舉人數 × 10%」，換算成得票率通常要 15% 上下。
+          我們自己做計算機，就不會給你一個算錯分母的目標。
+        </div>
+      </section>
+
+      <!-- 時程 -->
+      <section class="panel">
+        <div class="tag"><span class="no serif">④</span><h2 class="serif">時程規劃（115 年）</h2></div>
+        <ol class="timeline">
+          <li><span class="when serif">3～5 月</span><span>準備期：開發目標里潛在候選人、完成里級票數分析</span></li>
+          <li><span class="when serif">6～8 月</span><span>啟動期：拍攝 60 秒定位影片、問卷與客廳會啟動</span></li>
+          <li><span class="when serif">選前一週</span><span>競選期：密集社群投放、聯合造勢</span></li>
+          <li><span class="when serif">11/28（六）</span><span>投票日（預定，以中選會正式公告為準）：現場監票，守住每一票</span></li>
+        </ol>
+      </section>
+
+      <!-- 費用 -->
+      <section class="panel">
+        <div class="tag"><span class="no serif">⑤</span><h2 class="serif">服務費用</h2></div>
+        <table class="fees">
+          <thead><tr><th>項目</th><th>費用</th><th>內容</th></tr></thead>
+          <tbody>
+            <tr><td>選前影片 3 支</td><td class="price">NT$ 6,000</td><td>含 60 秒定位影片與選前造勢短片</td></tr>
+            <tr><td>社群代操</td><td class="price">NT$ 4,500 / 月</td><td>每日貼文、互動與素材排程</td></tr>
+            <tr><td>選戰陪跑</td><td class="price">細聊</td><td>問卷客廳會、拜訪計畫、聯合造勢，依你的里客製</td></tr>
+          </tbody>
+        </table>
+        <div class="trust">
+          <b>我們的目標跟你綁在一起。</b>
+          陪跑費用採里程碑制：達成保證金發還門檻，才算我們把事做完。
+          做不到的部分，不收完的錢。
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <div class="cta-zone">
+        <a class="btn btn-red serif" href="mailto:iamsterdam0918@gmail.com?subject=繁星計畫細聊&body=我住的里：%0D%0A想聊的事：">✉️ 我想細聊（寫信給我）</a>
+        <a class="btn btn-ink serif" href="/">🗳️ 先查我家的里要幾票</a>
+      </div>
+
+      <footer>
+        <p class="who serif">蔡承諺 Yenyen</p>
+        <p>法律顧問（勞動法・社區管理）｜素人里長繁星計畫 發起人｜2022 台鳳里里長候選人</p>
+        <p style="margin-top:10px">
+          本頁費用為輔導服務之對價，由計畫收取；本計畫不收受、不代收任何政治獻金。<br />
+          選舉資料來源：中央選舉委員會選舉資料庫。投票日以中選會正式公告為準。
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      const ITEMS = {
+        100: { t: '一份街區踏查指南', d: '印給一位想認識自己社區的人——改變從「走一圈自己的里」開始。' },
+        300: { t: '一場客廳會的茶水', d: '讓 8 位里民坐下來，說出自己里最在乎的三件事。' },
+        500: { t: '一里份的問卷調查', d: '把「感覺」變成「數據」，素人也能科學選里。' },
+        1000: { t: '60 秒影片的一天拍攝', d: '一位素人的「黃金一分鐘」，從此有臉有名字。' },
+        5000: { t: '一位練習生的四週陪跑', d: '從「有想法」走到「敢登記」，完整走一輪。' },
+      };
+      const screenEl = document.getElementById('vscreen');
+      const keys = document.querySelectorAll('.vending .keys button');
+      keys.forEach((b) => {
+        b.addEventListener('click', () => {
+          keys.forEach((x) => x.setAttribute('aria-pressed', 'false'));
+          b.setAttribute('aria-pressed', 'true');
+          const it = ITEMS[b.dataset.k];
+          screenEl.innerHTML =
+            '<b class="price serif">NT$ ' + Number(b.dataset.k).toLocaleString('zh-TW') + '</b>' +
+            '<b>' + it.t + '</b><br />' + it.d;
+        });
+      });
+    </script>
+  </body>
+</html>
