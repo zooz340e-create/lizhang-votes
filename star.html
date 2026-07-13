@@ -66,6 +66,22 @@
         width: 10px; height: 26px; background: var(--ink); border: 2px solid var(--paper);
         border-radius: 3px; flex: none;
       }
+      .vending .stage {
+        aspect-ratio: 1 / 1; max-height: 340px; max-width: 340px; margin: 0 auto 12px; position: relative;
+        border: 3px solid var(--ink); background: linear-gradient(180deg, #eee7d7, var(--paper));
+        overflow: hidden;
+      }
+      .vending .stage::before {
+        content: "3D 販賣機載入中…"; position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px; color: var(--ink-soft); letter-spacing: .2em;
+      }
+      .vending .stage canvas { position: relative; display: block; width: 100%; height: 100%; cursor: grab; }
+      .vending .stage canvas:active { cursor: grabbing; }
+      .vending .stage .hint {
+        position: absolute; right: 8px; bottom: 6px; font-size: 11px;
+        color: var(--ink-soft); letter-spacing: .1em; pointer-events: none;
+      }
       .vending .screen {
         border: 3px solid var(--ink); background: var(--paper); color: var(--ink);
         min-height: 96px; padding: 12px 14px; font-size: 14px;
@@ -166,6 +182,7 @@
           <span class="name serif">新政治販賣機</span>
           <span class="coin-slot" aria-hidden="true"></span>
         </div>
+        <div class="stage" id="vstage" aria-hidden="true"></div>
         <div class="screen" id="vscreen" aria-live="polite">
           <b class="price serif">按一個金額 👇</b>
           每一枚硬幣，都直接變成素人候選人用得到的東西。
@@ -294,7 +311,7 @@
       </footer>
     </div>
 
-    <script>
+    <script type="module">
       const ITEMS = {
         100: { t: '一份街區踏查指南', d: '印給一位想認識自己社區的人——改變從「走一圈自己的里」開始。' },
         300: { t: '一場客廳會的茶水', d: '讓 8 位里民坐下來，說出自己里最在乎的三件事。' },
@@ -314,6 +331,22 @@
             '<b>' + it.t + '</b><br />' + it.d;
         });
       });
+
+      // 3D 販賣機：漸進增強層，idle 時才載（不拖慢首屏）；WebGL 開不了就整塊收掉
+      const stage = document.getElementById('vstage');
+      const boot = () =>
+        import('./src/star3d.ts')
+          .then(({ initVending3D }) => {
+            const api = initVending3D(stage);
+            if (!api) { stage.remove(); return; }
+            const hint = document.createElement('span');
+            hint.className = 'hint';
+            hint.textContent = '↔ 拖曳看機台';
+            stage.appendChild(hint);
+            keys.forEach((b) => b.addEventListener('click', () => api.press(b.dataset.k)));
+          })
+          .catch(() => stage.remove());
+      ('requestIdleCallback' in window ? requestIdleCallback : (f) => setTimeout(f, 600))(boot);
     </script>
   </body>
 </html>
