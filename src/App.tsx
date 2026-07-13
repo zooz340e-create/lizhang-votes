@@ -226,7 +226,7 @@ export default function App() {
     const c = competition(v);
     return (
       `${v.county}${v.district}${v.village}｜選里長要幾票？\n` +
-      `🛟 保住 5,000 元保證金：至少 ${nf(d.votes)} 票\n` +
+      `🛟 保住 ${nf(d.deposit)} 元保證金：至少 ${nf(d.votes)} 票\n` +
       (w.lastWinner ? `🏆 上屆當選 ${w.lastWinner.name} 拿 ${nf(w.lastWinner.votes)} 票\n` : '') +
       `🎯 參選機會：${TIER[c.tier].dot} ${c.tier}（指數 ${c.score}）\n` +
       `你家那個里要幾票？來算 👉`

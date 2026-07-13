@@ -22,7 +22,7 @@ const xibao: Village = {
 test('退保證金門檻 = 選舉人數 × 10% 進位（西寶里）', () => {
   const r = depositThreshold(xibao);
   assert.equal(r.votes, 463); // ceil(4627 * 0.1)
-  assert.equal(r.deposit, 5000);
+  assert.equal(r.deposit, 50000);
 });
 
 test('無歷史資料 → 信心 low、競爭分析資料不足', () => {
