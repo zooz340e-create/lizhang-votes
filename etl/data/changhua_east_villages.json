@@ -1,0 +1,28 @@
+{
+  "note": "彰化市東區 22 里（彰化市公所服務區劃分）。里長名單為公開資訊，2026-07-27 由使用者提供。",
+  "town_id": "10007010",
+  "villages": [
+    { "village": "阿夷里", "neighborhoods": 27, "chief": "蔡國煌", "clerk": "張世昌", "tel": "7241062", "office": "泰和路2段415巷37弄2號" },
+    { "village": "寶廍里", "neighborhoods": 12, "chief": "李政", "clerk": "林淑倖", "tel": "7241059", "office": "寶廍路166巷12號" },
+    { "village": "國聖里", "neighborhoods": 24, "chief": "王海", "clerk": "白曉芬", "tel": "7321058", "office": "國聖路175巷121弄4號" },
+    { "village": "三村里", "neighborhoods": 8, "chief": "趙文男", "clerk": "白曉芬", "tel": "7381057", "office": "聖安路928之1號" },
+    { "village": "和調里", "neighborhoods": 20, "chief": "張金川", "clerk": "葉麗雪", "tel": "7241065", "office": "中山路三段21號" },
+    { "village": "牛埔里", "neighborhoods": 21, "chief": "魏文彬", "clerk": "王儷蓉", "tel": "7381054", "office": "彰南路三段211巷16號" },
+    { "village": "福山里", "neighborhoods": 33, "chief": "郭金主", "clerk": "吳佩寰", "tel": "7321055", "office": "山中街81巷119號" },
+    { "village": "田中里", "neighborhoods": 9, "chief": "林再森", "clerk": "林明義", "tel": "7383043", "office": "田中路217巷臨17號" },
+    { "village": "石牌里", "neighborhoods": 12, "chief": "王盈奇", "clerk": "沈靜宜", "tel": "7381151", "office": "石牌路一段235巷12號" },
+    { "village": "快官里", "neighborhoods": 12, "chief": "李坤金", "clerk": "張家瑋", "tel": "7381066", "office": "彰南路五段142巷11號之7" },
+    { "village": "竹巷里", "neighborhoods": 8, "chief": "張振遠", "clerk": "張家瑋", "tel": "7383839", "office": "彰南路五段3號" },
+    { "village": "古夷里", "neighborhoods": 10, "chief": "謝有煌", "clerk": "林淑倖", "tel": "7321063", "office": "泰和路三段241號" },
+    { "village": "香山里", "neighborhoods": 16, "chief": "許春郎", "clerk": "黃敏慧", "tel": "7381153", "office": "彰南路二段590巷52號" },
+    { "village": "安溪里", "neighborhoods": 14, "chief": "萬士嘉", "clerk": "游新怡", "tel": "7381091", "office": "安溪路328巷116號" },
+    { "village": "竹中里", "neighborhoods": 10, "chief": "何則諭", "clerk": "游新怡", "tel": "7372876", "office": "竹中路44號" },
+    { "village": "大竹里", "neighborhoods": 17, "chief": "吳朝琴", "clerk": "許元銘", "tel": "7381051", "office": "彰南路二段262巷13號之1" },
+    { "village": "茄苳里", "neighborhoods": 10, "chief": "吳秋仁", "clerk": "柯孟純", "tel": "7350060", "office": "茄苳路二段121巷62弄3號" },
+    { "village": "茄南里", "neighborhoods": 14, "chief": "吳文隆", "clerk": "柯孟純", "tel": "7351061", "office": "茄苳路二段87巷14號" },
+    { "village": "福田里", "neighborhoods": 10, "chief": "張畯蓄", "clerk": "林明義", "tel": "7381840", "office": "彰南路五段333號" },
+    { "village": "台鳳里", "neighborhoods": 16, "chief": "劉寶存", "clerk": "陳玉玲", "tel": "7388943", "office": "一心南街275號" },
+    { "village": "中庄里", "neighborhoods": 16, "chief": "蘇源順", "clerk": "許元銘", "tel": "7321855", "office": "竹和路403號" },
+    { "village": "復興里", "neighborhoods": 23, "chief": "李麗真", "clerk": "李岳旻", "tel": "7241064", "office": "自由街38巷53號" }
+  ]
+}
