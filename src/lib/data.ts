@@ -41,6 +41,27 @@ export function loadIndex(): Promise<DataIndex> {
   return (indexPromise ??= getJson<DataIndex>('index.json'));
 }
 
+// 里況資料（TESAS 年齡結構，ETL 烘焙；無檔案的縣市回 null 自動降級）
+export interface DemoEntry {
+  y: number; // 民國年
+  young: number; work: number; old: number;
+  young_p: number; work_p: number; old_p: number;
+  aging: number; // 老化指數
+}
+export interface DemoFile {
+  meta: { source: string; year_roc: number; note: string };
+  villages: Record<string, DemoEntry>; // key = `${district}|${village}`
+}
+const demoCache = new Map<string, Promise<DemoFile | null>>();
+export function loadDemo(code: string): Promise<DemoFile | null> {
+  let p = demoCache.get(code);
+  if (!p) {
+    p = getJson<DemoFile>(`demo/${code}.json`).catch(() => null);
+    demoCache.set(code, p);
+  }
+  return p;
+}
+
 const countyCache = new Map<string, Promise<VillageRow[]>>();
 export function loadCounty(code: string): Promise<VillageRow[]> {
   let p = countyCache.get(code);

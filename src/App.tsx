@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { depositThreshold, winInsight, competition, type OppTier } from './lib/calc';
-import { loadIndex, loadCounty, type VillageRow, type DataIndex } from './lib/data';
+import { loadIndex, loadCounty, loadDemo, type VillageRow, type DataIndex, type DemoFile } from './lib/data';
 
 const nf = (n: number) => n.toLocaleString('zh-TW');
 
@@ -152,6 +152,7 @@ export default function App() {
   const [district, setDistrict] = useState('');
   const [code, setCode] = useState('');
   const [copied, setCopied] = useState(false);
+  const [demo, setDemo] = useState<DemoFile | null>(null);
 
   // 首屏只載縣市清單（約 2KB）
   useEffect(() => {
@@ -182,6 +183,14 @@ export default function App() {
     return () => {
       cancelled = true;
     };
+  }, [county]);
+
+  // 里況資料（試營運縣市才有檔案，無檔自動缺席）
+  useEffect(() => {
+    if (!county) { setDemo(null); return; }
+    let cancelled = false;
+    loadDemo(county).then((d) => { if (!cancelled) setDemo(d); });
+    return () => { cancelled = true; };
   }, [county]);
 
   const meta = index?.meta;
@@ -494,6 +503,47 @@ export default function App() {
             </div>
           </details>
         </Panel>
+
+        {/* 里況速覽：TESAS 年齡結構（試營運縣市才有） */}
+        {(() => {
+          const d = demo?.villages[`${v.district}|${v.village}`];
+          if (!d) return null;
+          const seg = [
+            { label: '幼年 0–14', cnt: d.young, per: d.young_p, color: 'var(--color-gold)' },
+            { label: '青壯 15–64', cnt: d.work, per: d.work_p, color: 'var(--color-ink)' },
+            { label: '高齡 65+', cnt: d.old, per: d.old_p, color: 'var(--color-campaign)' },
+          ];
+          return (
+            <Panel>
+              <div className="flex items-center justify-between">
+                <SectionTag no="⑤" label="這個里的長相" />
+                <span className="bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-soft">試營運</span>
+              </div>
+              <div className="mt-4 flex h-7 w-full overflow-hidden">
+                {seg.map((s) => (
+                  <div key={s.label} className="h-full" style={{ width: `${s.per}%`, background: s.color }} title={`${s.label} ${s.per}%`} />
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                {seg.map((s) => (
+                  <span key={s.label} className="flex items-center gap-1.5 text-xs text-ink-soft">
+                    <span className="h-2.5 w-2.5 shrink-0" style={{ background: s.color }} />
+                    {s.label}：<b className="font-serif text-ink tabular-nums">{s.per}%</b>（{nf(s.cnt)} 人）
+                  </span>
+                ))}
+              </div>
+              <p className="mt-3 border-l-[3px] border-gold bg-paper px-3 py-2 text-[13px] leading-relaxed text-ink-soft">
+                老化指數 <b className="font-serif text-ink tabular-nums">{d.aging}</b>
+                {d.aging >= 200 ? '——每 1 位小孩對上 2 位以上長輩，長照與共餐是這裡的硬需求。' :
+                 d.aging >= 100 ? '——長輩已多於小孩，高齡議題正在變成日常。' :
+                 '——小孩還比長輩多，是相對年輕的社區。'}
+              </p>
+              <p className="mt-2 text-[11px] text-ink-soft/60">
+                資料：{demo?.meta.source}（民國 {d.y} 年，僅供趨勢參考）
+              </p>
+            </Panel>
+          );
+        })()}
 
         {/* 分區趣味數據：目前所選區之最 */}
         {best && (
