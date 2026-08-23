@@ -10,6 +10,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         star: resolve(__dirname, 'star.html'), // 繁星計畫 landing page
+        plan: resolve(__dirname, 'plan.html'), // 選戰行程規劃（教練版工具）
       },
     },
   },

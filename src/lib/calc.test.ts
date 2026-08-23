@@ -6,8 +6,11 @@ import {
   competition,
   consecutiveTerms,
   electionConfidence,
+  commitmentFunnel,
+  DEFAULT_FUNNEL_TIERS,
   type Village,
   type ElectionResult,
+  type CommitmentTier,
 } from './calc.ts';
 
 // 西寶里真實人口（戶政司 2020-11）
@@ -133,4 +136,27 @@ test('連任三屆同一人 → 高信心、連任屆數正確', () => {
   assert.equal(consecutiveTerms(v), 3);
   assert.equal(electionConfidence(v), 'high');
   assert.equal(competition(v).tier, '硬仗'); // 大比數連贏 = 機會指數低 = 硬仗
+});
+
+test('承諾階梯漏斗：全 0 人數 → 估票區間為 0', () => {
+  const tiers: CommitmentTier[] = DEFAULT_FUNNEL_TIERS.map((t) => ({ ...t, count: 0 }));
+  const r = commitmentFunnel(tiers);
+  assert.equal(r.low, 0);
+  assert.equal(r.high, 0);
+  assert.equal(r.totalContacts, 0);
+});
+
+test('承諾階梯漏斗：區間下限=各階人數×下限轉換率加總，上限同理', () => {
+  const tiers: CommitmentTier[] = [
+    { key: 'reach', label: '', count: 1000, rateLow: 0.01, rateHigh: 0.05 },
+    { key: 'light', label: '', count: 200, rateLow: 0.1, rateHigh: 0.2 },
+    { key: 'mid', label: '', count: 50, rateLow: 0.2, rateHigh: 0.4 },
+    { key: 'heavy', label: '', count: 20, rateLow: 0.7, rateHigh: 0.9 },
+  ];
+  const r = commitmentFunnel(tiers);
+  // low = 1000*.01 + 200*.1 + 50*.2 + 20*.7 = 10+20+10+14 = 54
+  assert.equal(r.low, 54);
+  // high = 1000*.05 + 200*.2 + 50*.4 + 20*.9 = 50+40+20+18 = 128
+  assert.equal(r.high, 128);
+  assert.equal(r.totalContacts, 1270);
 });

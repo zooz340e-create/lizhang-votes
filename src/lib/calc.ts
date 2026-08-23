@@ -336,6 +336,45 @@ export function competition(v: Village): Competition {
   };
 }
 
+// ── 4. 承諾階梯漏斗（支持度試算）─────────────────────────
+// 靈感來源：群眾募資「輕度承諾→重度承諾」轉換率分層研究（多層級支持選項、
+// VIP/非VIP 轉換率差異）。但這些係數是跨領域借用，不是本地選舉的實證數據，
+// 所以一律給「建議區間」而非單一係數，且區間可由候選人自行覆蓋。
+// ⚠️ 不做勝選/落選二元判定——那已經是預測選舉結果，逾越工具本分（見頂部方針）。
+export interface CommitmentTier {
+  key: string;
+  label: string; // 給候選人看的白話說明
+  count: number; // 這一階的人數（候選人/志工自行輸入）
+  rateLow: number; // 建議轉換率下限（0–1）
+  rateHigh: number; // 建議轉換率上限（0–1）
+}
+
+// 預設區間僅為起始參考值，強烈建議候選人依自己實測的加群/連署/志工報名數據調整。
+export const DEFAULT_FUNNEL_TIERS: ReadonlyArray<Omit<CommitmentTier, 'count'>> = [
+  { key: 'reach', label: '被動觸及（看過文宣、按讚）', rateLow: 0.01, rateHigh: 0.05 },
+  { key: 'light', label: '輕度承諾（加入 LINE 群、追蹤粉專）', rateLow: 0.1, rateHigh: 0.2 },
+  { key: 'mid', label: '中度承諾（完成連署、主動推薦鄰居）', rateLow: 0.2, rateHigh: 0.4 },
+  { key: 'heavy', label: '重度承諾（登記志工、站路口）', rateLow: 0.7, rateHigh: 0.9 },
+];
+
+export interface FunnelResult {
+  low: number; // 估票區間下限
+  high: number; // 估票區間上限
+  totalContacts: number; // 四階合計接觸人數
+}
+
+export function commitmentFunnel(tiers: CommitmentTier[]): FunnelResult {
+  let low = 0;
+  let high = 0;
+  let totalContacts = 0;
+  for (const t of tiers) {
+    low += t.count * t.rateLow;
+    high += t.count * t.rateHigh;
+    totalContacts += t.count;
+  }
+  return { low: Math.round(low), high: Math.round(high), totalContacts };
+}
+
 function nf(n: number): string {
   return n.toLocaleString('zh-TW');
 }
