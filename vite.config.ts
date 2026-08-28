@@ -11,6 +11,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         star: resolve(__dirname, 'star.html'), // 繁星計畫 landing page
         plan: resolve(__dirname, 'plan.html'), // 選戰行程規劃（教練版工具）
+        east: resolve(__dirname, 'east.html'), // 彰化東區 22 里限定選情站（名單轉換頁）
       },
     },
   },
