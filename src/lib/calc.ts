@@ -1,13 +1,15 @@
 // 里長票數計算機 — 核心計算邏輯（純函式，無副作用，可單元測試）
 //
 // 法律依據（公職人員選舉罷免法）：
-//  - 村里長候選人保證金 NT$50,000（中選會每次選舉公告；94 年修法前免繳，
-//    111 年地方選舉公告為 5 萬元，來源：web.cec.gov.tw/central/article/45843）
-//  - 保證金發還門檻：得票數 ≥ 選舉人數 ÷ 應選名額(里長=1) × 10% = 選舉人數 × 10%
+//  - 村里長候選人保證金 NT$30,000（115 年中選會 2026-07-22 第 4 次選務工作
+//    協調會議決議調降：村里長 5 萬 → 3 萬、鄉鎮市長 20 萬 → 10 萬，
+//    來源：中央社 cna.com.tw/news/aipl/202607220329.aspx；由各縣市選委會
+//    115-08-27 候選人登記公告載明。111 年為 5 萬元。）
+//  - 保證金發還門檻（選罷法 §32，未修）：得票數 ≥ 選舉人數 ÷ 應選名額(里長=1) × 10%
 //  - 當選：相對多數最高票
 // ⚠️ 當選票數與競爭分析為「估算」，非保證；保證金門檻為接近官方的法定試算。
 
-export const DEPOSIT_NTD = 50000; // 里長保證金（元）
+export const DEPOSIT_NTD = 30000; // 里長保證金（元，115 年）
 export const DEPOSIT_RATE = 0.1; // 退還門檻比例：選舉人數 × 10%
 export const DEFAULT_TURNOUT = 0.65; // 無歷史資料時的預設里長投票率
 export const VALID_VOTE_RATIO = 0.97; // 有效票約占投票數比例（扣廢票）
@@ -103,6 +105,28 @@ export interface HistWin {
   name: string;
   uncontested: boolean;
   party?: string;
+  sharePct?: number; // 得票率 %（votes ÷ 該屆候選人得票總和）
+}
+
+// 單屆全部候選人的得票占比（分母＝候選人得票總和，保證加總 100%）
+export interface VoteShare {
+  name: string;
+  votes: number;
+  pct: number; // 0–100，四捨五入到小數 1 位
+  won: boolean;
+  party?: string;
+}
+export function voteShares(e: ElectionResult): VoteShare[] {
+  const total = e.candidates.reduce((s, c) => s + c.votes, 0);
+  return [...e.candidates]
+    .sort((a, b) => b.votes - a.votes)
+    .map((c) => ({
+      name: c.name,
+      votes: c.votes,
+      pct: total > 0 ? Math.round((c.votes / total) * 1000) / 10 : 0,
+      won: c.won,
+      party: c.party,
+    }));
 }
 
 export interface WinInsight {
@@ -127,9 +151,16 @@ export function winInsight(v: Village): WinInsight {
   const historicalWins: HistWin[] = (v.history ?? [])
     .map((e): HistWin | undefined => {
       const w = e.candidates.find((c) => c.won) ?? [...e.candidates].sort((a, b) => b.votes - a.votes)[0];
-      return w
-        ? { year: e.year, votes: w.votes, name: w.name, uncontested: !!e.uncontested, party: w.party }
-        : undefined;
+      if (!w) return undefined;
+      const tot = e.candidates.reduce((s, c) => s + c.votes, 0);
+      return {
+        year: e.year,
+        votes: w.votes,
+        name: w.name,
+        uncontested: !!e.uncontested,
+        party: w.party,
+        sharePct: tot > 0 ? Math.round((w.votes / tot) * 1000) / 10 : undefined,
+      };
     })
     .filter((x): x is HistWin => !!x);
 

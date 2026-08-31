@@ -7,6 +7,7 @@ import {
   consecutiveTerms,
   electionConfidence,
   commitmentFunnel,
+  voteShares,
   DEFAULT_FUNNEL_TIERS,
   type Village,
   type ElectionResult,
@@ -22,10 +23,10 @@ const xibao: Village = {
   history: [],
 };
 
-test('退保證金門檻 = 選舉人數 × 10% 進位（西寶里）', () => {
+test('退保證金門檻 = 選舉人數 × 10% 進位（西寶里）；115 年保證金 3 萬', () => {
   const r = depositThreshold(xibao);
-  assert.equal(r.votes, 463); // ceil(4627 * 0.1)
-  assert.equal(r.deposit, 50000);
+  assert.equal(r.votes, 463); // ceil(4627 * 0.1)，門檻公式（選罷法 §32）未變
+  assert.equal(r.deposit, 30000); // 115 年中選會調降（111 年為 50000）
 });
 
 test('無歷史資料 → 信心 low、競爭分析資料不足', () => {
@@ -66,6 +67,28 @@ test('兩人對決：當選目標接近上屆當選票，信心 medium', () => {
   assert.equal(c.incumbentName, '張三');
   assert.equal(c.climbVotes, 1500); // 登頂要超過現任上屆的 1500 票
   assert.equal(c.consecutiveTerms, 1);
+});
+
+test('voteShares：三位候選人得票率加總 100%，由高至低排序', () => {
+  const e: ElectionResult = {
+    year: 2022,
+    valid_votes: 3100,
+    candidates: [
+      { name: '乙', votes: 1000, won: false },
+      { name: '甲', votes: 1300, won: true },
+      { name: '丙', votes: 800, won: false },
+    ],
+  };
+  const s = voteShares(e);
+  assert.deepEqual(s.map((x) => x.name), ['甲', '乙', '丙']); // 高→低
+  assert.equal(s[0].pct, 41.9); // 1300/3100
+  assert.equal(s[1].pct, 32.3);
+  assert.equal(s[2].pct, 25.8);
+  const sum = s.reduce((t, x) => t + x.pct, 0);
+  assert.ok(Math.abs(sum - 100) < 0.15, `加總應≈100，實得 ${sum}`); // 四捨五入誤差容忍
+  // winInsight 的歷屆當選票也帶得票率
+  const v: Village = { region_code: 'x', village: '測試%里', pop_eligible_est: 4000, history: [e] };
+  assert.equal(winInsight(v).historicalWins[0].sharePct, 41.9);
 });
 
 test('多人混戰：3 名候選人', () => {

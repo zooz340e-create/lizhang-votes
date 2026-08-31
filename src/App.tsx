@@ -410,6 +410,9 @@ export default function App() {
                         <div className="absolute inset-y-0 left-0" style={{ width: `${Math.max(8, (h.votes / histMax) * 100)}%`, background: barColor }} />
                         <span className="absolute inset-y-0 left-2 flex items-center text-xs font-bold text-paper tabular-nums">
                           {nf(h.votes)}
+                          {h.sharePct !== undefined && !h.uncontested && (
+                            <span className="ml-1 opacity-80">（{h.sharePct}%）</span>
+                          )}
                         </span>
                       </div>
                       <span className="flex w-28 shrink-0 items-center justify-end gap-1 text-xs font-medium text-ink-soft">

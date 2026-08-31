@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
-import { depositThreshold, winInsight, competition } from './lib/calc';
-import { loadCounty, type VillageRow } from './lib/data';
+import { depositThreshold, winInsight, competition, voteShares } from './lib/calc';
+import { loadCounty, loadDemo, type VillageRow, type DemoFile } from './lib/data';
 
 // 東區限定選情站 — 彰化市東區 22 里
 //
@@ -10,7 +10,7 @@ import { loadCounty, type VillageRow } from './lib/data';
 // 其他區塊（案例/測驗/智販機願景）都是為這個轉換服務的配菜。
 //
 // 法律紅線（勿改動）：
-//  - 保證金 NT$50,000（中選會 111 年公告，web.cec.gov.tw/central/article/45843）
+//  - 保證金 NT$30,000（115 年中選會 2026-07-22 決議調降，見 lib/calc.ts 註解）
 //  - 智販機/贊助所得 = COV 計畫營收（陪跑服務），不收受、不代收政治獻金；
 //    政治獻金須由捐贈人直接捐入監察院許可之候選人專戶。
 
@@ -159,11 +159,13 @@ export default function EastApp() {
   const [village, setVillage] = useState('');
   const [answers, setAnswers] = useState<Array<QuizOption['type'] | null>>([null, null, null]);
   const [qr, setQr] = useState('');
+  const [demo, setDemo] = useState<DemoFile | null>(null);
 
   useEffect(() => {
     loadCounty('10007')
       .then((vs) => setRows(vs.filter((x) => x.district === '彰化市' && EAST_VILLAGES.includes(x.village))))
       .catch(() => setError('資料載入失敗，請重新整理'));
+    loadDemo('10007').then(setDemo);
   }, []);
 
   useEffect(() => {
@@ -175,8 +177,17 @@ export default function EastApp() {
   const v = useMemo(() => rows.find((x) => x.village === village), [rows, village]);
   const result = useMemo(() => {
     if (!v) return null;
-    return { deposit: depositThreshold(v), win: winInsight(v), comp: competition(v) };
+    const last = v.history?.[0];
+    return {
+      deposit: depositThreshold(v),
+      win: winInsight(v),
+      comp: competition(v),
+      shares: last ? voteShares(last) : [], // 上屆各候選人得票占比（加總 100%）
+      lastYear: last?.year,
+      lastUncontested: !!last?.uncontested,
+    };
   }, [v]);
+  const demoEntry = v ? demo?.villages[`${v.district}|${v.village}`] : undefined;
 
   const quizDone = answers.every((a) => a !== null);
   const quizType = useMemo(() => {
@@ -248,15 +259,20 @@ export default function EastApp() {
           {result && v && (
             <div className="mt-4 space-y-3">
               <div className="border-[3px] border-ink bg-campaign-hero p-4 text-paper">
-                <p className="text-xs font-bold text-paper/80">保住 5 萬元保證金，至少要</p>
+                <p className="text-xs font-bold text-paper/80">保住 3 萬元保證金，至少要</p>
                 <p className="font-serif text-5xl font-black tabular-nums">{nf(result.deposit.votes)} <span className="text-2xl">票</span></p>
-                <p className="mt-1 text-[11px] text-paper/70">《選罷法》門檻＝選舉人數 {nf(result.deposit.electorate)} × 10%（保證金 NT$50,000，中選會公告）</p>
+                <p className="mt-1 text-[11px] text-paper/70">
+                  《選罷法》門檻＝選舉人數 {nf(result.deposit.electorate)} × 10%（保證金 NT${nf(result.deposit.deposit)}，115 年中選會調降）
+                </p>
               </div>
               <div className="flex gap-3">
                 <div className="flex-1 border-[3px] border-ink bg-paper p-3 text-center">
                   <p className="text-[11px] font-bold text-ink-soft">上屆當選票</p>
                   <p className="font-serif text-2xl font-black text-ink tabular-nums">
                     {result.win.lastWinner ? nf(result.win.lastWinner.votes) : '—'}
+                    {result.win.lastWinner?.sharePct !== undefined && !result.win.lastWinner.uncontested && (
+                      <span className="ml-1 text-sm text-ink-soft">（{result.win.lastWinner.sharePct}%）</span>
+                    )}
                   </p>
                   {result.win.lastWinner && <p className="text-[11px] text-ink-soft">{result.win.lastWinner.name}{result.win.lastWinner.uncontested && '（同額）'}</p>}
                 </div>
@@ -266,6 +282,52 @@ export default function EastApp() {
                   <p className="text-[11px] text-ink-soft tabular-nums">機會指數 {result.comp.score}/100</p>
                 </div>
               </div>
+              {/* 上屆得票分佈（各候選人占比，加總 100%） */}
+              {result.shares.length > 1 && !result.lastUncontested && (
+                <div className="border-[3px] border-ink bg-white p-3">
+                  <p className="text-[11px] font-bold text-ink-soft">{result.lastYear} 年得票分佈（支持度占比）</p>
+                  <div className="mt-2 space-y-1.5">
+                    {result.shares.map((s) => (
+                      <div key={s.name} className="flex items-center gap-2">
+                        <span className="w-16 shrink-0 truncate text-[12px] font-bold text-ink">
+                          {s.won && '🏆'}{s.name}
+                        </span>
+                        <div className="relative h-5 flex-1 bg-paper">
+                          <div
+                            className={`absolute inset-y-0 left-0 ${s.won ? 'bg-campaign' : 'bg-ink/40'}`}
+                            style={{ width: `${Math.max(4, s.pct)}%` }}
+                          />
+                        </div>
+                        <span className="w-20 shrink-0 text-right text-[12px] font-bold text-ink tabular-nums">
+                          {s.pct}%<span className="ml-1 font-normal text-ink-soft">({nf(s.votes)})</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* 這個里的長相：年齡結構（TESAS） */}
+              {demoEntry && (
+                <div className="border-[3px] border-ink bg-white p-3">
+                  <p className="text-[11px] font-bold text-ink-soft">這個里的長相：年齡分佈</p>
+                  <div className="mt-2 flex h-6 w-full overflow-hidden">
+                    {[
+                      { label: '幼年 0–14', per: demoEntry.young_p, color: 'var(--color-gold)' },
+                      { label: '青壯 15–64', per: demoEntry.work_p, color: 'var(--color-ink)' },
+                      { label: '高齡 65+', per: demoEntry.old_p, color: 'var(--color-campaign)' },
+                    ].map((s) => (
+                      <div key={s.label} className="h-full" style={{ width: `${s.per}%`, background: s.color }} title={`${s.label} ${s.per}%`} />
+                    ))}
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink-soft">
+                    <span>🟡 幼年 {demoEntry.young_p}%</span>
+                    <span>🔵 青壯 {demoEntry.work_p}%</span>
+                    <span>🔴 高齡 {demoEntry.old_p}%</span>
+                    <span>老化指數 {demoEntry.aging}</span>
+                  </div>
+                  <p className="mt-1 text-[10px] text-ink-soft/60">{demo?.meta.source}（民國 {demoEntry.y} 年，趨勢參考）</p>
+                </div>
+              )}
               {/* 轉換閥門：健檢報告 CTA */}
               <div className="border-[3px] border-dashed border-campaign bg-campaign/5 p-4">
                 <p className="font-serif text-base leading-relaxed font-black text-ink">
@@ -398,7 +460,8 @@ export default function EastApp() {
 
         {/* 免責 */}
         <footer className="space-y-1 px-1 text-center text-[11px] leading-relaxed text-ink-soft/70">
-          <p>資料來源：中央選舉委員會選舉資料庫。保證金 NT$50,000 與退還門檻依 111 年地方公職選舉公告試算。</p>
+          <p>資料來源：中央選舉委員會選舉資料庫。保證金 NT$30,000（115 年中選會調降）；退還門檻依《選罷法》第 32 條試算。</p>
+          <p>行政區域如有調整（新設、合併之里），以 115-08-27 各縣市選委會候選人登記公告為準，本站陸續更新。</p>
           <p>本站為 COV 素人里長繁星計畫（民間陪跑計畫）所設，非任何候選人競選網站；估算僅供參考，不構成當選保證。</p>
           <p><a href="./" className="underline decoration-dotted">全臺 7,973 里完整版計算機 →</a></p>
         </footer>
