@@ -362,6 +362,12 @@ export default function App() {
           const dailyWin = comp.hasHistory ? Math.ceil(comp.climbVotes / daysLeft) : 0;
           return (
             <div className="mt-5 space-y-5">
+        {/* 行政區調整新里標示 */}
+        {v.adj && (
+          <p className="border-[3px] border-gold bg-gold/10 px-3 py-2 text-[13px] leading-relaxed font-bold text-ink">
+            🆕 {v.adj}
+          </p>
+        )}
         {/* ② 退保證金 — 主角卡 */}
         <Panel className="relative overflow-hidden bg-campaign-hero! text-paper">
           <BallotStamp className="pointer-events-none absolute -top-6 -right-6 h-40 w-40 text-paper/10" />

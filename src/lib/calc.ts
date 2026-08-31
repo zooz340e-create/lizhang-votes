@@ -39,8 +39,9 @@ export interface Village {
   region_code: string;
   village: string;
   pop_total?: number; // 總人口（ETL 現版未輸出，僅早期資料有）
-  pop_eligible_est: number; // 選舉人數（中選會最近一屆官方數字）
+  pop_eligible_est: number; // 選舉人數（中選會最近一屆官方數字；行政區調整新里為人口推估）
   history?: ElectionResult[]; // 由新到舊排序
+  adj?: string; // 行政區調整註記（例：115 年 7 月新設，選舉人數為推估）
 }
 
 export type Confidence = 'high' | 'medium' | 'low';
