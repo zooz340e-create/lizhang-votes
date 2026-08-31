@@ -325,6 +325,11 @@ export default function EastApp() {
                     <span>🔴 高齡 {demoEntry.old_p}%</span>
                     <span>老化指數 {demoEntry.aging}</span>
                   </div>
+                  {demoEntry.ta_p !== undefined && (
+                    <p className="mt-1.5 text-[12px] font-bold text-ink tabular-nums">
+                      主力 TA 30–49 歲：{demoEntry.ta_p}%（{nf(demoEntry.ta ?? 0)} 人）・60 歲以上：{demoEntry.o60_p}%（{nf(demoEntry.o60 ?? 0)} 人）
+                    </p>
+                  )}
                   <p className="mt-1 text-[10px] text-ink-soft/60">{demo?.meta.source}（民國 {demoEntry.y} 年，趨勢參考）</p>
                 </div>
               )}

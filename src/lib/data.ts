@@ -41,12 +41,14 @@ export function loadIndex(): Promise<DataIndex> {
   return (indexPromise ??= getJson<DataIndex>('index.json'));
 }
 
-// 里況資料（TESAS 年齡結構，ETL 烘焙；無檔案的縣市回 null 自動降級）
+// 里況資料（SEGIS 五歲年齡組烘焙，全國 22 縣市；無檔案時回 null 自動降級）
 export interface DemoEntry {
   y: number; // 民國年
   young: number; work: number; old: number;
   young_p: number; work_p: number; old_p: number;
   aging: number; // 老化指數
+  ta?: number; ta_p?: number; // 30–49 歲主力 TA（人數／占比）
+  o60?: number; o60_p?: number; // 60 歲以上（人數／占比）
 }
 export interface DemoFile {
   meta: { source: string; year_roc: number; note: string };

@@ -574,7 +574,7 @@ export default function App() {
             <Panel>
               <div className="flex items-center justify-between">
                 <SectionTag no="⑤" label="這個里的長相" />
-                <span className="bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-soft">試營運</span>
+                <span className="bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-soft">全臺 · 民國 {d.y} 年</span>
               </div>
               <div className="mt-4 flex h-7 w-full overflow-hidden">
                 {seg.map((s) => (
@@ -589,6 +589,20 @@ export default function App() {
                   </span>
                 ))}
               </div>
+              {d.ta_p !== undefined && (
+                <div className="mt-3 flex gap-3">
+                  <div className="flex-1 border-[3px] border-ink bg-paper p-2 text-center">
+                    <p className="text-[11px] font-bold text-ink-soft">30–49 歲（青壯主力）</p>
+                    <p className="font-serif text-xl font-black text-ink tabular-nums">{d.ta_p}%</p>
+                    <p className="text-[11px] text-ink-soft tabular-nums">{nf(d.ta ?? 0)} 人</p>
+                  </div>
+                  <div className="flex-1 border-[3px] border-ink bg-paper p-2 text-center">
+                    <p className="text-[11px] font-bold text-ink-soft">60 歲以上</p>
+                    <p className="font-serif text-xl font-black text-campaign tabular-nums">{d.o60_p}%</p>
+                    <p className="text-[11px] text-ink-soft tabular-nums">{nf(d.o60 ?? 0)} 人</p>
+                  </div>
+                </div>
+              )}
               <p className="mt-3 border-l-[3px] border-gold bg-paper px-3 py-2 text-[13px] leading-relaxed text-ink-soft">
                 老化指數 <b className="font-serif text-ink tabular-nums">{d.aging}</b>
                 {d.aging >= 200 ? '——每 1 位小孩對上 2 位以上長輩，長照與共餐是這裡的硬需求。' :
