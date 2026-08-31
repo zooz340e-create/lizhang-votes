@@ -354,6 +354,12 @@ export default function App() {
           const comp = competition(v);
           const tier = TIER[comp.tier];
           const histMax = win.histMaxWin ?? 1;
+          // 距投票日與每日配額（115-11-28 投票）
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const daysLeft = Math.max(1, Math.ceil((new Date('2026-11-28T00:00:00').getTime() - today.getTime()) / 86_400_000));
+          const dailyDeposit = Math.ceil(deposit.votes / daysLeft);
+          const dailyWin = comp.hasHistory ? Math.ceil(comp.climbVotes / daysLeft) : 0;
           return (
             <div className="mt-5 space-y-5">
         {/* ② 退保證金 — 主角卡 */}
@@ -375,6 +381,10 @@ export default function App() {
           <p className="mt-2 border-t border-paper/30 pt-2 text-xs text-paper/70">
             《選罷法》門檻 = 選舉人數 × 10%。本里選舉人數 {nf(deposit.electorate)} 人（中選會最近一屆官方數）。
           </p>
+          <p className="mt-1.5 text-xs text-paper/80">
+            ⏳ 距 11/28 投票日 <b className="tabular-nums">{daysLeft}</b> 天——平均每天累積{' '}
+            <b className="tabular-nums">{nf(dailyDeposit)}</b> 位支持者，就能跨過這條線。
+          </p>
         </Panel>
 
         {/* ③ 當選要幾票 — 真實歷史 + 過半線 */}
@@ -394,6 +404,12 @@ export default function App() {
             <span className="font-serif text-3xl font-black tabular-nums text-ink">{nf(win.halfLine)} 票</span>
           </div>
           <p className="mt-1.5 text-xs text-ink-soft/80">兩人對決時、要贏的大致門檻（過半有效票）。</p>
+          {v.history?.[0] && (
+            <p className="mt-1 text-xs text-ink-soft tabular-nums">
+              上屆投票率 <b>{Math.round(win.turnout * 1000) / 10}%</b>
+              {v.history[0].valid_votes !== undefined && <>・有效票 <b>{nf(v.history[0].valid_votes)}</b> 張</>}
+            </p>
+          )}
 
           {/* 近三屆實際當選票 */}
           {win.historicalWins.length > 0 ? (
@@ -481,6 +497,9 @@ export default function App() {
                 <span className="font-serif text-3xl font-black tabular-nums text-campaign">{nf(comp.climbVotes)} 票</span>
               </div>
               <p className="mt-1.5 text-xs text-ink-soft/80">{comp.climbBasis}。</p>
+              <p className="mt-1 text-xs text-ink-soft tabular-nums">
+                ⏳ 距投票日 {daysLeft} 天——登頂平均每天要累積 <b className="text-campaign">{nf(dailyWin)}</b> 位支持者。
+              </p>
 
               {/* 連任 */}
               {comp.consecutiveTerms > 0 && (
