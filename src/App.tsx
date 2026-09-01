@@ -442,6 +442,7 @@ export default function App() {
                         <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: barColor }} title={pt.label} />
                         <span className="truncate">{h.name}</span>
                         {h.uncontested && <span className="shrink-0 text-campaign">·同額</span>}
+                        {h.tie && <span className="shrink-0 text-campaign">·抽籤</span>}
                       </span>
                     </div>
                   );

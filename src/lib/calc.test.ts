@@ -91,6 +91,37 @@ test('voteShares：三位候選人得票率加總 100%，由高至低排序', ()
   assert.equal(winInsight(v).historicalWins[0].sharePct, 41.9);
 });
 
+test('同票抽籤：won 標記者為當選人；未解同票不冒名當選人', () => {
+  const mk = (won: [boolean, boolean], tie?: boolean): Village => ({
+    region_code: 'x',
+    village: '同票里',
+    pop_eligible_est: 4352,
+    history: [
+      {
+        year: 2022,
+        electorate: 4352,
+        turnout: 0.65,
+        valid_votes: 2766,
+        tie,
+        candidates: [
+          { name: '卓阿萬', votes: 1383, won: won[0] },
+          { name: '蘇臻宥', votes: 1383, won: won[1] },
+        ],
+      },
+    ],
+  });
+  // 已查證：蘇臻宥抽中當選
+  const solved = winInsight(mk([false, true], true));
+  assert.equal(solved.lastWinner?.name, '蘇臻宥');
+  assert.equal(solved.lastWinner?.tie, true);
+  assert.equal(competition(mk([false, true], true)).incumbentName, '蘇臻宥');
+  // 未查證：不得隨機冒出當選人
+  const unsolved = winInsight(mk([false, false], true));
+  assert.match(unsolved.lastWinner?.name ?? '', /同票/);
+  assert.equal(unsolved.lastWinner?.tie, true);
+  assert.equal(competition(mk([false, false], true)).incumbentName, undefined);
+});
+
 test('多人混戰：3 名候選人', () => {
   const v: Village = {
     region_code: 'x',

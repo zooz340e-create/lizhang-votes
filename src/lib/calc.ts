@@ -33,6 +33,7 @@ export interface ElectionResult {
   valid_votes?: number;
   candidates: Candidate[];
   uncontested?: boolean; // 同額競選（候選人數 = 應選名額）
+  tie?: boolean; // 最高票同票、依選罷法抽籤決定當選（won=抽籤結果；無 won=結果查證中）
 }
 
 export interface Village {
@@ -56,7 +57,10 @@ function winnerName(e: ElectionResult): string | undefined {
   const w = e.candidates.find((c) => c.won);
   if (w) return w.name;
   if (e.candidates.length === 0) return undefined;
-  return [...e.candidates].sort((a, b) => b.votes - a.votes)[0]?.name;
+  const sorted = [...e.candidates].sort((a, b) => b.votes - a.votes);
+  // 最高票同票且無當選標記＝抽籤結果未查證，不能隨便冒出一個「當選人」
+  if (sorted.length > 1 && sorted[0].votes === sorted[1].votes) return undefined;
+  return sorted[0]?.name;
 }
 
 function topTwoVotes(e: ElectionResult): [number, number] {
@@ -107,6 +111,7 @@ export interface HistWin {
   uncontested: boolean;
   party?: string;
   sharePct?: number; // 得票率 %（votes ÷ 該屆候選人得票總和）
+  tie?: boolean; // 同票抽籤當選（或同票且結果查證中）
 }
 
 // 單屆全部候選人的得票占比（分母＝候選人得票總和，保證加總 100%）
@@ -151,7 +156,21 @@ export function winInsight(v: Village): WinInsight {
 
   const historicalWins: HistWin[] = (v.history ?? [])
     .map((e): HistWin | undefined => {
-      const w = e.candidates.find((c) => c.won) ?? [...e.candidates].sort((a, b) => b.votes - a.votes)[0];
+      const marked = e.candidates.find((c) => c.won);
+      const sorted = [...e.candidates].sort((a, b) => b.votes - a.votes);
+      // 未解的同票案：不冒名當選人，顯示「兩人同票」
+      if (!marked && sorted.length > 1 && sorted[0].votes === sorted[1].votes) {
+        const tot = e.candidates.reduce((s, c) => s + c.votes, 0);
+        return {
+          year: e.year,
+          votes: sorted[0].votes,
+          name: `${sorted[0].name}／${sorted[1].name}（同票）`,
+          uncontested: false,
+          tie: true,
+          sharePct: tot > 0 ? Math.round((sorted[0].votes / tot) * 1000) / 10 : undefined,
+        };
+      }
+      const w = marked ?? sorted[0];
       if (!w) return undefined;
       const tot = e.candidates.reduce((s, c) => s + c.votes, 0);
       return {
@@ -161,6 +180,7 @@ export function winInsight(v: Village): WinInsight {
         uncontested: !!e.uncontested,
         party: w.party,
         sharePct: tot > 0 ? Math.round((w.votes / tot) * 1000) / 10 : undefined,
+        tie: e.tie || undefined,
       };
     })
     .filter((x): x is HistWin => !!x);
