@@ -175,19 +175,19 @@ export default function EastApp() {
   }, []);
 
   const v = useMemo(() => rows.find((x) => x.village === village), [rows, village]);
+  const demoEntry = v ? demo?.villages[`${v.district}|${v.village}`] : undefined;
   const result = useMemo(() => {
     if (!v) return null;
     const last = v.history?.[0];
     return {
-      deposit: depositThreshold(v),
+      deposit: depositThreshold(v, demoEntry?.a20, demoEntry?.y),
       win: winInsight(v),
       comp: competition(v),
       shares: last ? voteShares(last) : [], // 上屆各候選人得票占比（加總 100%）
       lastYear: last?.year,
       lastUncontested: !!last?.uncontested,
     };
-  }, [v]);
-  const demoEntry = v ? demo?.villages[`${v.district}|${v.village}`] : undefined;
+  }, [v, demoEntry]);
 
   const quizDone = answers.every((a) => a !== null);
   const quizType = useMemo(() => {
@@ -262,7 +262,11 @@ export default function EastApp() {
                 <p className="text-xs font-bold text-paper/80">保住 3 萬元保證金，至少要</p>
                 <p className="font-serif text-5xl font-black tabular-nums">{nf(result.deposit.votes)} <span className="text-2xl">票</span></p>
                 <p className="mt-1 text-[11px] text-paper/70">
-                  《選罷法》門檻＝選舉人數 {nf(result.deposit.electorate)} × 10%（保證金 NT${nf(result.deposit.deposit)}，115 年中選會調降）
+                  《選罷法》門檻＝選舉人數 × 10%（保證金 NT${nf(result.deposit.deposit)}，115 年調降）。
+                  {result.deposit.basis === 'adult20'
+                    ? `基礎：20 歲以上人口 ${nf(result.deposit.electorate)} 人（${result.deposit.basisYear}/12 戶籍統計）`
+                    : `基礎：上屆選舉人數 ${nf(result.deposit.electorate)} 人`}
+                  ；正式以選委會公告為準。
                 </p>
               </div>
               <div className="flex gap-3">

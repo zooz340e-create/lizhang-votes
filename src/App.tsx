@@ -263,7 +263,8 @@ export default function App() {
 
   const shareText = useMemo(() => {
     if (!v) return '';
-    const d = depositThreshold(v);
+    const de = demo?.villages[`${v.district}|${v.village}`];
+    const d = depositThreshold(v, de?.a20, de?.y);
     const w = winInsight(v);
     const c = competition(v);
     return (
@@ -273,7 +274,7 @@ export default function App() {
       `🎯 參選機會：${TIER[c.tier].dot} ${c.tier}（指數 ${c.score}）\n` +
       `你家那個里要幾票？來算 👉`
     );
-  }, [v]);
+  }, [v, demo]);
 
   function copy() {
     navigator.clipboard?.writeText(shareText);
@@ -349,7 +350,8 @@ export default function App() {
 
       {v &&
         (() => {
-          const deposit = depositThreshold(v);
+          const dEntry = demo?.villages[`${v.district}|${v.village}`];
+          const deposit = depositThreshold(v, dEntry?.a20, dEntry?.y);
           const win = winInsight(v);
           const comp = competition(v);
           const tier = TIER[comp.tier];
@@ -385,7 +387,22 @@ export default function App() {
             拿到這個票數，就能保住 <b>{nf(deposit.deposit)} 元</b>保證金不被沒收。
           </p>
           <p className="mt-2 border-t border-paper/30 pt-2 text-xs text-paper/70">
-            《選罷法》門檻 = 選舉人數 × 10%。本里選舉人數 {nf(deposit.electorate)} 人（中選會最近一屆官方數）。
+            《選罷法》門檻 = 選舉人數 × 10%。
+            {deposit.basis === 'adult20' ? (
+              <>
+                計算基礎：本里 20 歲以上人口 <b className="tabular-nums">{nf(deposit.electorate)}</b> 人
+                （內政部民國 {deposit.basisYear} 年 12 月戶籍統計）。
+                {deposit.lastElectorate !== undefined && deposit.driftPct !== undefined && (
+                  <>
+                    對照上屆（2022）官方選舉人數 {nf(deposit.lastElectorate)} 人，
+                    {deposit.driftPct >= 0 ? `成長 ${deposit.driftPct}%` : `減少 ${Math.abs(deposit.driftPct)}%`}。
+                  </>
+                )}
+              </>
+            ) : (
+              <>本里選舉人數 {nf(deposit.electorate)} 人（上一屆官方數；此里暫無最新人口統計）。</>
+            )}
+            正式門檻以投票日選委會公告之選舉人數為準。
           </p>
           <p className="mt-1.5 text-xs text-paper/80">
             ⏳ 距 11/28 投票日 <b className="tabular-nums">{daysLeft}</b> 天——平均每天累積{' '}

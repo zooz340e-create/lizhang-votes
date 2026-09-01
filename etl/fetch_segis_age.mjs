@@ -75,6 +75,7 @@ for (const f of readdirSync(countyDir)) {
     const young = sum(r, YOUNG), work = sum(r, WORK), old = sum(r, OLD);
     const ta = sum(r, TA3049), o60 = sum(r, O60);
     const tot = young + work + old;
+    const a20 = tot - young - sum(r, [G5(15, 19)]); // 20 歲以上（選舉權年齡）
     if (tot === 0) continue;
     villages[`${r.TOWN}|${name}`] = {
       y: 114,
@@ -83,6 +84,7 @@ for (const f of readdirSync(countyDir)) {
       aging: young > 0 ? r1((old / young) * 100) : 0,
       ta: ta, ta_p: r1((ta / tot) * 100), // 30–49 歲（主力 TA）
       o60: o60, o60_p: r1((o60 / tot) * 100), // 60 歲以上
+      a20, // 20 歲以上人口（保證金門檻的最新計算基礎）
     };
   }
   const meta = {

@@ -27,6 +27,17 @@ test('退保證金門檻 = 選舉人數 × 10% 進位（西寶里）；115 年�
   const r = depositThreshold(xibao);
   assert.equal(r.votes, 463); // ceil(4627 * 0.1)，門檻公式（選罷法 §32）未變
   assert.equal(r.deposit, 30000); // 115 年中選會調降（111 年為 50000）
+  assert.equal(r.basis, 'lastElection'); // 無最新人口 → 退回上屆基礎
+});
+
+test('保證金門檻雙軌：有最新 20 歲以上人口時優先採用，並給對照漂移%', () => {
+  const r = depositThreshold(xibao, 4506, 114); // 廣隆里實例：2022 選舉人數 4627→假設
+  assert.equal(r.basis, 'adult20');
+  assert.equal(r.votes, 451); // ceil(4506 * 0.1)
+  assert.equal(r.electorate, 4506);
+  assert.equal(r.basisYear, 114);
+  assert.equal(r.lastElectorate, 4627);
+  assert.equal(r.driftPct, -2.6); // (4506-4627)/4627 = -2.61% → -2.6
 });
 
 test('無歷史資料 → 信心 low、競爭分析資料不足', () => {

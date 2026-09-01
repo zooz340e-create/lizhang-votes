@@ -83,21 +83,43 @@ export function consecutiveTerms(v: Village): number {
 }
 
 // ── 1. 退保證金門檻 ──────────────────────────────────────
+// 計算基礎（2026-09 起雙軌）：優先用內政部最新「20 歲以上戶籍人口」
+// （SEGIS 五歲年齡組，目前 114 年 12 月）——選舉人數的最新近似；
+// 上屆官方選舉人數保留作對照（四年人口漂移常達 ±3~5%）。
+// 正式門檻仍以投票日選委會公告之選舉人數為準。
 export interface DepositResult {
   votes: number; // 達標所需票數
-  electorate: number; // 採用的選舉人數
+  electorate: number; // 採用的計算基礎人數
   deposit: number; // 保證金金額
-  isEstimate: boolean; // 是否為推估（無官方選舉人數時為 true）
+  isEstimate: boolean; // 是否為推估
+  basis: 'adult20' | 'lastElection'; // adult20=最新20歲以上人口；lastElection=上屆官方選舉人數
+  basisYear?: number; // adult20 基礎的資料年（民國）
+  lastElectorate?: number; // 上屆官方選舉人數（對照）
+  driftPct?: number; // 最新基礎相對上屆的變化 %（+成長／-流失）
 }
 
-export function depositThreshold(v: Village): DepositResult {
-  // 以最新人口推估的選舉人數為準（「如果現在就選」）
+export function depositThreshold(v: Village, adult20?: number, adult20Year?: number): DepositResult {
+  if (adult20 && adult20 > 0) {
+    const last = v.pop_eligible_est;
+    return {
+      votes: Math.ceil(adult20 * DEPOSIT_RATE),
+      electorate: adult20,
+      deposit: DEPOSIT_NTD,
+      isEstimate: true,
+      basis: 'adult20',
+      basisYear: adult20Year,
+      lastElectorate: last > 0 ? last : undefined,
+      driftPct: last > 0 ? Math.round(((adult20 - last) / last) * 1000) / 10 : undefined,
+    };
+  }
+  // 無最新人口資料（例：行政區調整新設里）→ 退回既有基礎
   const electorate = v.pop_eligible_est;
   return {
     votes: Math.ceil(electorate * DEPOSIT_RATE),
     electorate,
     deposit: DEPOSIT_NTD,
     isEstimate: true,
+    basis: 'lastElection',
   };
 }
 

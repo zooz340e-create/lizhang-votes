@@ -49,6 +49,7 @@ export interface DemoEntry {
   aging: number; // 老化指數
   ta?: number; ta_p?: number; // 30–49 歲主力 TA（人數／占比）
   o60?: number; o60_p?: number; // 60 歲以上（人數／占比）
+  a20?: number; // 20 歲以上人口（保證金門檻的最新計算基礎）
 }
 export interface DemoFile {
   meta: { source: string; year_roc: number; note: string };
