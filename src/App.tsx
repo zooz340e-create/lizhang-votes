@@ -178,7 +178,6 @@ export default function App() {
   const [error, setError] = useState('');
   const [district, setDistrict] = useState('');
   const [code, setCode] = useState('');
-  const [copied, setCopied] = useState(false);
   const [demo, setDemo] = useState<DemoFile | null>(null);
   const [tierCounts, setTierCounts] = useState<number[]>(() => DEFAULT_FUNNEL_TIERS.map(() => 0));
   const [cardBusy, setCardBusy] = useState(false);
@@ -277,25 +276,6 @@ export default function App() {
       `你家那個里要幾票？來算 👉`
     );
   }, [v, demo]);
-
-  function copy() {
-    navigator.clipboard?.writeText(shareText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  }
-
-  async function share() {
-    const data = { title: '里長票數計算機', text: shareText, url: typeof location !== 'undefined' ? location.href : '' };
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share(data);
-        return;
-      } catch {
-        /* 使用者取消分享，忽略 */
-      }
-    }
-    copy();
-  }
 
   return (
     <div className="mx-auto min-h-screen max-w-xl px-4 pb-12">
@@ -759,24 +739,10 @@ export default function App() {
               }
             }}
             disabled={cardBusy}
-            className="mb-3 block w-full cursor-pointer border-[3px] border-gold-soft bg-gold py-3 font-serif text-base font-black tracking-widest text-ink transition-colors duration-200 hover:bg-gold-soft disabled:opacity-50 focus:ring-2 focus:ring-paper focus:outline-none"
+            className="block w-full cursor-pointer border-[3px] border-gold-soft bg-gold py-3 font-serif text-base font-black tracking-widest text-ink transition-colors duration-200 hover:bg-gold-soft disabled:opacity-50 focus:ring-2 focus:ring-paper focus:outline-none"
           >
             {cardBusy ? '產生中…' : '📇 下載選情圖卡（IG/FB 直式）'}
           </button>
-          <div className="flex gap-3">
-            <button
-              onClick={share}
-              className="flex-1 cursor-pointer border-[3px] border-paper bg-campaign py-3 font-serif text-base font-black tracking-widest text-paper transition-colors duration-200 hover:bg-campaign-dark focus:ring-2 focus:ring-gold-soft focus:outline-none"
-            >
-              一鍵分享
-            </button>
-            <button
-              onClick={copy}
-              className="flex-1 cursor-pointer border-[3px] border-paper/60 py-3 font-serif text-base font-black tracking-widest text-paper transition-colors duration-200 hover:border-paper focus:ring-2 focus:ring-gold-soft focus:outline-none"
-            >
-              {copied ? '✓ 已複製' : '複製文字'}
-            </button>
-          </div>
         </section>
 
         {/* 免責 */}
