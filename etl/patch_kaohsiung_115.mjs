@@ -27,8 +27,25 @@ for (let n = 10; n <= 400; n += 10) {
   districts.set(`64000${String(n).padStart(3, '0')}`, null);
 }
 
+// 自動偵測最新可用月份（用鼓山區探測，從當月往回找）
+let MONTH = 7;
+{
+  const now = new Date();
+  const curM = now.getFullYear() - 1911 === 115 ? now.getMonth() + 1 : 12;
+  for (let m = curM; m >= 7; m--) {
+    const r = await fetch(`https://demographics.kcg.gov.tw/demographstats/detailed/population/districts/64000020/villages?year=115&month=${m}`,
+      { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' } }).catch(() => null);
+    if (r?.ok) {
+      const d = await r.json().catch(() => null);
+      const list = Array.isArray(d) ? d : (d ? Object.values(d).find(Array.isArray) : null);
+      if (list?.length) { MONTH = m; break; }
+    }
+  }
+  console.log(`採用資料月份：115/${MONTH}`);
+}
+
 async function fetchVillages(code) {
-  const url = `https://demographics.kcg.gov.tw/demographstats/detailed/population/districts/${code}/villages?year=115&month=7`;
+  const url = `https://demographics.kcg.gov.tw/demographstats/detailed/population/districts/${code}/villages?year=115&month=${MONTH}`;
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' } });
   if (!res.ok) return null;
   return res.json().catch(() => null);
@@ -59,6 +76,17 @@ console.log(`官方 115/7 名冊：${official.size} 里，${districtNames.size} 
 // 每區「選舉人/人口」比（2022 電算 electorate ÷ 對應 SEGIS 114 人口）近似 0.85，
 // 為免再拉一份人口檔，這裡用全市經驗比 0.85（推估值，介面已標示 isEstimate）
 const ELECTOR_RATIO = 0.85;
+
+// 既有調整里（前次執行加入者）人口回填至最新月份
+for (const v of calc) {
+  if (!v.adj) continue;
+  const o = official.get(`${v.district}|${v.village}`);
+  if (o?.pop) {
+    v.pop_total = o.pop;
+    v.pop_eligible_est = Math.round(o.pop * 0.85);
+    console.log(`↻ 更新 ${v.district}${v.village}：人口 ${o.pop}`);
+  }
+}
 
 const calcKeys = new Set(calc.map((v) => `${v.district}|${v.village}`));
 const removed = [];
