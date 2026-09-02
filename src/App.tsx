@@ -8,6 +8,7 @@ import {
   type OppTier,
   type CommitmentTier,
 } from './lib/calc';
+import { shareCard } from './lib/shareCard';
 import { loadIndex, loadCounty, loadDemo, type VillageRow, type DataIndex, type DemoFile } from './lib/data';
 
 const nf = (n: number) => n.toLocaleString('zh-TW');
@@ -180,6 +181,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [demo, setDemo] = useState<DemoFile | null>(null);
   const [tierCounts, setTierCounts] = useState<number[]>(() => DEFAULT_FUNNEL_TIERS.map(() => 0));
+  const [cardBusy, setCardBusy] = useState(false);
 
   // 首屏只載縣市清單（約 2KB）
   useEffect(() => {
@@ -404,10 +406,21 @@ export default function App() {
             )}
             正式門檻以投票日選委會公告之選舉人數為準。
           </p>
-          <p className="mt-1.5 text-xs text-paper/80">
-            ⏳ 距 11/28 投票日 <b className="tabular-nums">{daysLeft}</b> 天——平均每天累積{' '}
-            <b className="tabular-nums">{nf(dailyDeposit)}</b> 位支持者，就能跨過這條線。
-          </p>
+          <div className="mt-3 flex gap-3">
+            <div className="flex-1 border-2 border-paper/50 p-2 text-center">
+              <p className="text-[11px] font-bold text-paper/70">⏳ 距 11/28 投票日</p>
+              <p className="font-serif text-4xl leading-tight font-black tabular-nums">
+                {daysLeft}<span className="ml-1 text-lg">天</span>
+              </p>
+            </div>
+            <div className="flex-1 border-2 border-gold-soft bg-paper/10 p-2 text-center">
+              <p className="text-[11px] font-bold text-paper/70">每天累積支持者</p>
+              <p className="font-serif text-4xl leading-tight font-black text-gold-soft tabular-nums">
+                +{nf(dailyDeposit)}<span className="ml-1 text-lg">人</span>
+              </p>
+            </div>
+          </div>
+          <p className="mt-1.5 text-center text-[11px] text-paper/60">照這個節奏走，投票日就跨過保證金線。</p>
         </Panel>
 
         {/* ③ 當選要幾票 — 真實歷史 + 過半線 */}
@@ -521,9 +534,20 @@ export default function App() {
                 <span className="font-serif text-3xl font-black tabular-nums text-campaign">{nf(comp.climbVotes)} 票</span>
               </div>
               <p className="mt-1.5 text-xs text-ink-soft/80">{comp.climbBasis}。</p>
-              <p className="mt-1 text-xs text-ink-soft tabular-nums">
-                ⏳ 距投票日 {daysLeft} 天——登頂平均每天要累積 <b className="text-campaign">{nf(dailyWin)}</b> 位支持者。
-              </p>
+              <div className="mt-2 flex gap-3">
+                <div className="flex-1 border-[3px] border-ink bg-paper p-2 text-center">
+                  <p className="text-[11px] font-bold text-ink-soft">⏳ 距投票日</p>
+                  <p className="font-serif text-3xl leading-tight font-black text-ink tabular-nums">
+                    {daysLeft}<span className="ml-1 text-base">天</span>
+                  </p>
+                </div>
+                <div className="flex-1 border-[3px] border-campaign bg-campaign/5 p-2 text-center">
+                  <p className="text-[11px] font-bold text-ink-soft">登頂每天要累積</p>
+                  <p className="font-serif text-3xl leading-tight font-black text-campaign tabular-nums">
+                    +{nf(dailyWin)}<span className="ml-1 text-base">人</span>
+                  </p>
+                </div>
+              </div>
 
               {/* 連任 */}
               {comp.consecutiveTerms > 0 && (
@@ -725,6 +749,20 @@ export default function App() {
           <p className="mb-4 border-l-2 border-paper/30 pl-3 text-sm leading-relaxed whitespace-pre-line text-paper/85">
             {shareText}
           </p>
+          <button
+            onClick={async () => {
+              setCardBusy(true);
+              try {
+                await shareCard(v, comp.consecutiveTerms, demo?.villages[`${v.district}|${v.village}`], 2026);
+              } finally {
+                setCardBusy(false);
+              }
+            }}
+            disabled={cardBusy}
+            className="mb-3 block w-full cursor-pointer border-[3px] border-gold-soft bg-gold py-3 font-serif text-base font-black tracking-widest text-ink transition-colors duration-200 hover:bg-gold-soft disabled:opacity-50 focus:ring-2 focus:ring-paper focus:outline-none"
+          >
+            {cardBusy ? '產生中…' : '📇 下載選情圖卡（IG/FB 直式）'}
+          </button>
           <div className="flex gap-3">
             <button
               onClick={share}
