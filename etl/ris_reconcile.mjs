@@ -77,10 +77,11 @@ for (const r of ris) {
 
 // ── 罕字雙向容錯比對 ──────────────────────────────────────
 // 異體字歸一（中選會與戶政司拼法差異，2026-09-01 全國比對實證清單）
-const VARIANTS = [['舘', '館'], ['脚', '腳'], ['双', '雙'], ['墻', '牆'], ['鷄', '雞'], ['濓', '濂'], ['峯', '峰'], ['臺', '台']];
+const VARIANTS = [['舘', '館'], ['脚', '腳'], ['双', '雙'], ['墻', '牆'], ['鷄', '雞'], ['濓', '濂'], ['峯', '峰'], ['臺', '台'], ['壳', '売'], ['𦰡', '那'], ['𣐤', '瓊'], ['豊', '豐']];
 const normVariant = (s) => VARIANTS.reduce((acc, [a, b]) => acc.split(a).join(b), s);
 
-const BROKEN = /\[.\]|[?\u{FFFD}]|[\u{E000}-\u{F8FF}]/gu;
+// 私用區含增補平面（戶政司用 Plane 15/16 PUA，中選會用 BMP PUA——新竹/彰化磚磘里實證）
+const BROKEN = /\[.\]|[?\u{FFFD}]|[\u{E000}-\u{F8FF}]|[\u{F0000}-\u{FFFFD}]|[\u{100000}-\u{10FFFD}]/gu;
 const hasBroken = (s) => { BROKEN.lastIndex = 0; return BROKEN.test(s); };
 const toPattern = (s) =>
   new RegExp('^' + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(BROKEN, '.') + '$');
@@ -193,6 +194,16 @@ for (const f of readdirSync(countyDir)) {
 function getCountyName(data) {
   return data.villages[0]?.county ?? '';
 }
+
+// index.json 縣市里數同步
+const indexPath = join(__dirname, '..', 'public', 'data', 'index.json');
+const index = JSON.parse(readFileSync(indexPath, 'utf8'));
+for (const c of index.counties) {
+  const d = JSON.parse(readFileSync(join(countyDir, `${c.code}.json`), 'utf8'));
+  c.villages = d.villages.length;
+}
+index.meta.generated_at = new Date().toISOString().slice(0, 10) + ` (RIS ${YEAR}/${MONTH} 對帳)`;
+writeFileSync(indexPath, JSON.stringify(index), 'utf8');
 
 console.log(`\n=== 對帳完成（${YEAR}/${MONTH}）===`);
 console.log(`新增 ${report.added.length} 里：\n  ${report.added.join('\n  ') || '（無）'}`);

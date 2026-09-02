@@ -291,7 +291,7 @@ export default function App() {
       {v &&
         (() => {
           const dEntry = villageDemo(demo, v.district, v.village);
-          const deposit = depositThreshold(v, dEntry?.a20, dEntry?.y);
+          const deposit = depositThreshold(v, dEntry?.a20, dEntry?.y, dEntry?.m);
           const win = winInsight(v);
           const comp = competition(v);
           const tier = TIER[comp.tier];
@@ -331,7 +331,7 @@ export default function App() {
             {deposit.basis === 'adult20' ? (
               <>
                 計算基礎：本里 20 歲以上人口 <b className="tabular-nums">{nf(deposit.electorate)}</b> 人
-                （內政部民國 {deposit.basisYear} 年 12 月戶籍統計）。
+                （內政部民國 {deposit.basisYear} 年 {deposit.basisMonth ?? 12} 月戶籍統計）。
                 {deposit.lastElectorate !== undefined && deposit.driftPct !== undefined && (
                   <>
                     對照上屆（2022）官方選舉人數 {nf(deposit.lastElectorate)} 人，
@@ -565,7 +565,7 @@ export default function App() {
             <Panel>
               <div className="flex items-center justify-between">
                 <SectionTag no="⑤" label="這個里的長相" />
-                <span className="bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-soft">全臺 · 民國 {d.y} 年</span>
+                <span className="bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-soft">全臺 · 民國 {d.y} 年{d.m ? ` ${d.m} 月` : ''}</span>
               </div>
               <div className="mt-4 flex h-7 w-full overflow-hidden">
                 {seg.map((s) => (
@@ -601,7 +601,7 @@ export default function App() {
                  '——小孩還比長輩多，是相對年輕的社區。'}
               </p>
               <p className="mt-2 text-[11px] text-ink-soft/60">
-                資料：{demo?.meta.source}（民國 {d.y} 年，僅供趨勢參考）
+                資料：{demo?.meta.source}（民國 {d.y} 年{d.m ? ` ${d.m} 月` : ''}，僅供趨勢參考）
               </p>
             </Panel>
           );

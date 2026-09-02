@@ -251,7 +251,7 @@ export async function drawShareCard(
   ctx.lineTo(W - M, footY - 36);
   ctx.stroke();
   text(ctx, '選舉數據：中央選舉委員會 111 年村(里)長選舉各投開票所候選人得票數一覽表', M, footY, 26, { color: C.gray });
-  text(ctx, `人口數據：內政部 SEGIS（民國 ${demoEntry?.y ?? 114} 年 12 月）    保證金 3 萬元（115 年）`, M, footY + 34, 26, { color: C.gray });
+  text(ctx, `人口數據：內政部戶政統計（民國 ${demoEntry?.y ?? 114} 年 ${demoEntry?.m ?? 12} 月）    保證金 3 萬元（115 年）`, M, footY + 34, 26, { color: C.gray });
   text(ctx, 'lizhang-votes.vercel.app   —   COV 里長練習生計畫', M, footY + 68, 26, { color: C.gray, weight: 700 });
 
   return canvas;

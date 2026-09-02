@@ -96,11 +96,12 @@ export interface DepositResult {
   // popEstimate=行政區調整里，上屆數字已不適用，改用最新戶籍人口推估
   basis: 'adult20' | 'lastElection' | 'popEstimate';
   basisYear?: number; // adult20 基礎的資料年（民國）
+  basisMonth?: number; // adult20 基礎的資料月（月度資料源）
   lastElectorate?: number; // 上屆官方選舉人數（對照）
   driftPct?: number; // 最新基礎相對上屆的變化 %（+成長／-流失）
 }
 
-export function depositThreshold(v: Village, adult20?: number, adult20Year?: number): DepositResult {
+export function depositThreshold(v: Village, adult20?: number, adult20Year?: number, adult20Month?: number): DepositResult {
   if (adult20 && adult20 > 0) {
     const last = v.pop_eligible_est;
     return {
@@ -110,6 +111,7 @@ export function depositThreshold(v: Village, adult20?: number, adult20Year?: num
       isEstimate: true,
       basis: 'adult20',
       basisYear: adult20Year,
+      basisMonth: adult20Month,
       lastElectorate: last > 0 ? last : undefined,
       driftPct: last > 0 ? Math.round(((adult20 - last) / last) * 1000) / 10 : undefined,
     };
