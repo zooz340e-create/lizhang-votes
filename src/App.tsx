@@ -263,21 +263,6 @@ export default function App() {
   );
   const funnel = useMemo(() => commitmentFunnel(funnelTiers), [funnelTiers]);
 
-  const shareText = useMemo(() => {
-    if (!v) return '';
-    const de = villageDemo(demo, v.district, v.village);
-    const d = depositThreshold(v, de?.a20, de?.y);
-    const w = winInsight(v);
-    const c = competition(v);
-    return (
-      `${v.county}${v.district}${v.village}｜選里長要幾票？\n` +
-      `🛟 保住 ${nf(d.deposit)} 元保證金：至少 ${nf(d.votes)} 票\n` +
-      (w.lastWinner ? `🏆 上屆當選 ${w.lastWinner.name} 拿 ${nf(w.lastWinner.votes)} 票\n` : '') +
-      `🎯 參選機會：${TIER[c.tier].dot} ${c.tier}（指數 ${c.score}）\n` +
-      `你家那個里要幾票？來算 👉`
-    );
-  }, [v, demo]);
-
   return (
     <div className="mx-auto min-h-screen max-w-xl px-4 pb-12">
       {/* 報頭 / Masthead */}
@@ -650,12 +635,13 @@ export default function App() {
           );
         })()}
 
-        {/* ⑥ 陸戰漏斗：支持度試算（誠實區間，非單一預測） */}
+        {/* ⑥ 陸戰漏斗：支持度試算（誠實區間，非單一預測；預設收合減輕版面） */}
         <Panel>
-          <div className="flex items-center justify-between">
+          <details>
+          <summary className="flex cursor-pointer list-none items-center justify-between select-none [&::-webkit-details-marker]:hidden">
             <SectionTag no="⑥" label="陸戰漏斗：支持度試算" />
-            <span className="bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-soft">試營運</span>
-          </div>
+            <span className="bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-soft">給考慮參選的你 · 點開試算 ▾</span>
+          </summary>
           <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
             填入你各階段接觸到的人數，抓出「保守 ~ 樂觀」的估票區間——不是精準預測，是幫你分配陸戰資源的參考。
           </p>
@@ -685,6 +671,7 @@ export default function App() {
               <p>強烈建議你實際追蹤自己的加群數、連署數、志工報名數，用真實比例覆蓋這裡的預設值，數字才會越用越準。</p>
               <p className="text-ink-soft/60">＊本工具不做「會不會選上」的二元判定，只提供估票區間，實際選情仍看當年參選人數與動員。</p>
             </div>
+          </details>
           </details>
         </Panel>
 
@@ -732,27 +719,21 @@ export default function App() {
         </section>
         )}
 
-        {/* 分享 */}
-        <section className="border-[3px] border-ink bg-ink p-5 text-paper">
-          <p className="mb-3 font-serif text-sm font-bold tracking-wide text-gold-soft">把你家的戰況傳給朋友</p>
-          <p className="mb-4 border-l-2 border-paper/30 pl-3 text-sm leading-relaxed whitespace-pre-line text-paper/85">
-            {shareText}
-          </p>
-          <button
-            onClick={async () => {
-              setCardBusy(true);
-              try {
-                await shareCard(v, comp.consecutiveTerms, villageDemo(demo, v.district, v.village), 2026);
-              } finally {
-                setCardBusy(false);
-              }
-            }}
-            disabled={cardBusy}
-            className="block w-full cursor-pointer border-[3px] border-gold-soft bg-gold py-3 font-serif text-base font-black tracking-widest text-ink transition-colors duration-200 hover:bg-gold-soft disabled:opacity-50 focus:ring-2 focus:ring-paper focus:outline-none"
-          >
-            {cardBusy ? '產生中…' : '📇 下載選情圖卡（IG/FB 直式）'}
-          </button>
-        </section>
+        {/* 📇 選情圖卡下載（瘦身版，無外框區塊） */}
+        <button
+          onClick={async () => {
+            setCardBusy(true);
+            try {
+              await shareCard(v, comp.consecutiveTerms, villageDemo(demo, v.district, v.village), 2026);
+            } finally {
+              setCardBusy(false);
+            }
+          }}
+          disabled={cardBusy}
+          className="block w-full cursor-pointer border-[3px] border-ink bg-gold py-3.5 font-serif text-base font-black tracking-widest text-ink shadow-[5px_5px_0_0_var(--color-ink)] transition-colors duration-200 hover:bg-gold-soft disabled:opacity-50 focus:ring-2 focus:ring-campaign focus:outline-none"
+        >
+          {cardBusy ? '產生中…' : '📇 下載這個里的選情圖卡（IG/FB 直式）'}
+        </button>
 
         {/* ⚔️ 數位競選總部報名入口 */}
         <a
