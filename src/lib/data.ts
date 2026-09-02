@@ -50,7 +50,20 @@ export interface DemoEntry {
   ta?: number; ta_p?: number; // 30–49 歲主力 TA（人數／占比）
   o60?: number; o60_p?: number; // 60 歲以上（人數／占比）
   a20?: number; // 20 歲以上人口（保證金門檻的最新計算基礎）
+  // 此里已因行政區調整改變範圍，本筆描述的是調整前的舊里：數字保留備查，但不得拿去
+  // 算門檻或畫年齡卡（例：南勢里 115-07-01 分出力行里、新林里後只剩約三分之一人口）
+  stale?: true;
 }
+// 取用某里的年齡資料；範圍已變動的舊資料視同沒有
+export function villageDemo(
+  demo: DemoFile | null | undefined,
+  district: string,
+  village: string,
+): DemoEntry | undefined {
+  const d = demo?.villages[`${district}|${village}`];
+  return d && !d.stale ? d : undefined;
+}
+
 export interface DemoFile {
   meta: { source: string; year_roc: number; note: string };
   villages: Record<string, DemoEntry>; // key = `${district}|${village}`

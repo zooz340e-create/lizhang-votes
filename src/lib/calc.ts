@@ -92,7 +92,9 @@ export interface DepositResult {
   electorate: number; // 採用的計算基礎人數
   deposit: number; // 保證金金額
   isEstimate: boolean; // 是否為推估
-  basis: 'adult20' | 'lastElection'; // adult20=最新20歲以上人口；lastElection=上屆官方選舉人數
+  // adult20=最新20歲以上人口；lastElection=上屆官方選舉人數；
+  // popEstimate=行政區調整里，上屆數字已不適用，改用最新戶籍人口推估
+  basis: 'adult20' | 'lastElection' | 'popEstimate';
   basisYear?: number; // adult20 基礎的資料年（民國）
   lastElectorate?: number; // 上屆官方選舉人數（對照）
   driftPct?: number; // 最新基礎相對上屆的變化 %（+成長／-流失）
@@ -112,14 +114,16 @@ export function depositThreshold(v: Village, adult20?: number, adult20Year?: num
       driftPct: last > 0 ? Math.round(((adult20 - last) / last) * 1000) / 10 : undefined,
     };
   }
-  // 無最新人口資料（例：行政區調整新設里）→ 退回既有基礎
+  // 無最新 20 歲以上人口 → 退回 pop_eligible_est。
+  // 行政區調整的里（新設或母里範圍縮小）沒有可比的上屆選舉人數，該欄位存的是
+  // ETL 依最新戶籍人口推估的值，不能對使用者說是「上一屆官方數」。
   const electorate = v.pop_eligible_est;
   return {
     votes: Math.ceil(electorate * DEPOSIT_RATE),
     electorate,
     deposit: DEPOSIT_NTD,
     isEstimate: true,
-    basis: 'lastElection',
+    basis: v.adj ? 'popEstimate' : 'lastElection',
   };
 }
 

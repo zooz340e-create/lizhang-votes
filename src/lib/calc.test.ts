@@ -40,6 +40,23 @@ test('保證金門檻雙軌：有最新 20 歲以上人口時優先採用，並�
   assert.equal(r.driftPct, -2.6); // (4506-4627)/4627 = -2.61% → -2.6
 });
 
+test('行政區調整新設里：門檻基礎標為人口推估，不冒稱上屆官方數', () => {
+  // 林口區力行里（115-07-01 自南勢里分出）：無歷屆、無 SEGIS 年齡資料
+  const lixing: Village = {
+    region_code: '65000-115ADJ-2',
+    village: '力行里',
+    pop_total: 14911,
+    pop_eligible_est: 11231,
+    history: [],
+    adj: '115 年 7 月行政區調整新設（自南勢里分出）',
+  };
+  const r = depositThreshold(lixing);
+  assert.equal(r.basis, 'popEstimate');
+  assert.equal(r.votes, 1124); // ceil(11231 * 0.1)
+  // 沒有 adj 註記的里維持原本說法
+  assert.equal(depositThreshold({ ...lixing, adj: undefined }).basis, 'lastElection');
+});
+
 test('無歷史資料 → 信心 low、競爭分析資料不足', () => {
   assert.equal(electionConfidence(xibao), 'low');
   const c = competition(xibao);

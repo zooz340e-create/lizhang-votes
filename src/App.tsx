@@ -9,7 +9,7 @@ import {
   type CommitmentTier,
 } from './lib/calc';
 import { shareCard } from './lib/shareCard';
-import { loadIndex, loadCounty, loadDemo, type VillageRow, type DataIndex, type DemoFile } from './lib/data';
+import { loadIndex, loadCounty, loadDemo, villageDemo, type VillageRow, type DataIndex, type DemoFile } from './lib/data';
 
 const nf = (n: number) => n.toLocaleString('zh-TW');
 
@@ -264,7 +264,7 @@ export default function App() {
 
   const shareText = useMemo(() => {
     if (!v) return '';
-    const de = demo?.villages[`${v.district}|${v.village}`];
+    const de = villageDemo(demo, v.district, v.village);
     const d = depositThreshold(v, de?.a20, de?.y);
     const w = winInsight(v);
     const c = competition(v);
@@ -332,7 +332,7 @@ export default function App() {
 
       {v &&
         (() => {
-          const dEntry = demo?.villages[`${v.district}|${v.village}`];
+          const dEntry = villageDemo(demo, v.district, v.village);
           const deposit = depositThreshold(v, dEntry?.a20, dEntry?.y);
           const win = winInsight(v);
           const comp = competition(v);
@@ -380,6 +380,11 @@ export default function App() {
                     {deposit.driftPct >= 0 ? `成長 ${deposit.driftPct}%` : `減少 ${Math.abs(deposit.driftPct)}%`}。
                   </>
                 )}
+              </>
+            ) : deposit.basis === 'popEstimate' ? (
+              <>
+                本里因行政區調整，上屆選舉人數已不適用；此處以最新戶籍人口推估
+                <b className="tabular-nums">{nf(deposit.electorate)}</b> 人。
               </>
             ) : (
               <>本里選舉人數 {nf(deposit.electorate)} 人（上一屆官方數；此里暫無最新人口統計）。</>
@@ -591,7 +596,7 @@ export default function App() {
 
         {/* 里況速覽：TESAS 年齡結構（試營運縣市才有） */}
         {(() => {
-          const d = demo?.villages[`${v.district}|${v.village}`];
+          const d = villageDemo(demo, v.district, v.village);
           if (!d) return null;
           const seg = [
             { label: '幼年 0–14', cnt: d.young, per: d.young_p, color: 'var(--color-gold)' },
@@ -733,7 +738,7 @@ export default function App() {
             onClick={async () => {
               setCardBusy(true);
               try {
-                await shareCard(v, comp.consecutiveTerms, demo?.villages[`${v.district}|${v.village}`], 2026);
+                await shareCard(v, comp.consecutiveTerms, villageDemo(demo, v.district, v.village), 2026);
               } finally {
                 setCardBusy(false);
               }
