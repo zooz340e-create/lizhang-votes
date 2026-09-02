@@ -181,7 +181,7 @@ export default function EastApp() {
     if (!v) return null;
     const last = v.history?.[0];
     return {
-      deposit: depositThreshold(v, demoEntry?.a20, demoEntry?.y),
+      deposit: depositThreshold(v, demoEntry?.a20, demoEntry?.y, demoEntry?.m),
       win: winInsight(v),
       comp: competition(v),
       shares: last ? voteShares(last) : [], // 上屆各候選人得票占比（加總 100%）
@@ -265,7 +265,7 @@ export default function EastApp() {
                 <p className="mt-1 text-[11px] text-paper/70">
                   《選罷法》門檻＝選舉人數 × 10%（保證金 NT${nf(result.deposit.deposit)}，115 年調降）。
                   {result.deposit.basis === 'adult20'
-                    ? `基礎：20 歲以上人口 ${nf(result.deposit.electorate)} 人（${result.deposit.basisYear}/12 戶籍統計）`
+                    ? `基礎：20 歲以上人口 ${nf(result.deposit.electorate)} 人（${result.deposit.basisYear}/${result.deposit.basisMonth ?? 12} 戶籍統計）`
                     : `基礎：上屆選舉人數 ${nf(result.deposit.electorate)} 人`}
                   ；正式以選委會公告為準。
                 </p>
@@ -335,7 +335,7 @@ export default function EastApp() {
                       主力 TA 30–49 歲：{demoEntry.ta_p}%（{nf(demoEntry.ta ?? 0)} 人）・60 歲以上：{demoEntry.o60_p}%（{nf(demoEntry.o60 ?? 0)} 人）
                     </p>
                   )}
-                  <p className="mt-1 text-[10px] text-ink-soft/60">{demo?.meta.source}（民國 {demoEntry.y} 年，趨勢參考）</p>
+                  <p className="mt-1 text-[10px] text-ink-soft/60">{demo?.meta.source}（民國 {demoEntry.y} 年{demoEntry.m ? ` ${demoEntry.m} 月` : ''}，趨勢參考）</p>
                 </div>
               )}
               {/* 轉換閥門：健檢報告 CTA */}
