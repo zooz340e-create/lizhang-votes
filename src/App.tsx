@@ -3,10 +3,7 @@ import {
   depositThreshold,
   winInsight,
   competition,
-  commitmentFunnel,
-  DEFAULT_FUNNEL_TIERS,
   type OppTier,
-  type CommitmentTier,
 } from './lib/calc';
 import { shareCard } from './lib/shareCard';
 import PollCard, { SIGNUP_FORM } from './PollCard';
@@ -139,24 +136,6 @@ function Panel({ children, className = '' }: { children: React.ReactNode; classN
   );
 }
 
-// 承諾階梯漏斗的人數輸入框
-function TierInput({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
-  return (
-    <label className="flex items-center justify-between gap-3 py-1.5">
-      <span className="text-[13px] leading-snug text-ink-soft">{label}</span>
-      <input
-        type="number"
-        min={0}
-        inputMode="numeric"
-        value={value || ''}
-        placeholder="0"
-        onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
-        className="w-24 shrink-0 border-[3px] border-ink bg-white px-2 py-1 text-right font-serif text-base font-black tabular-nums text-ink focus:border-campaign focus:outline-none"
-      />
-    </label>
-  );
-}
-
 function Guide({ county, district }: { county: string; district: string }) {
   const step = !county ? '① 選擇縣市' : !district ? '② 選擇鄉鎮市區' : '③ 選擇村里';
   return (
@@ -180,7 +159,6 @@ export default function App() {
   const [district, setDistrict] = useState('');
   const [code, setCode] = useState('');
   const [demo, setDemo] = useState<DemoFile | null>(null);
-  const [tierCounts, setTierCounts] = useState<number[]>(() => DEFAULT_FUNNEL_TIERS.map(() => 0));
   const [cardBusy, setCardBusy] = useState(false);
 
   // 首屏只載縣市清單（約 2KB）
@@ -256,12 +234,6 @@ export default function App() {
       oldest: aged.length ? maxBy(aged, (r) => r.c.incumbentAge!) : safe[0],
     };
   }, [districtVillages]);
-
-  const funnelTiers: CommitmentTier[] = useMemo(
-    () => DEFAULT_FUNNEL_TIERS.map((t, i) => ({ ...t, count: tierCounts[i] ?? 0 })),
-    [tierCounts],
-  );
-  const funnel = useMemo(() => commitmentFunnel(funnelTiers), [funnelTiers]);
 
   return (
     <div className="mx-auto min-h-screen max-w-xl px-4 pb-12">
@@ -634,46 +606,6 @@ export default function App() {
             </Panel>
           );
         })()}
-
-        {/* ⑥ 陸戰漏斗：支持度試算（誠實區間，非單一預測；預設收合減輕版面） */}
-        <Panel>
-          <details>
-          <summary className="flex cursor-pointer list-none items-center justify-between select-none [&::-webkit-details-marker]:hidden">
-            <SectionTag no="⑥" label="陸戰漏斗：支持度試算" />
-            <span className="bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-soft">給考慮參選的你 · 點開試算 ▾</span>
-          </summary>
-          <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-            填入你各階段接觸到的人數，抓出「保守 ~ 樂觀」的估票區間——不是精準預測，是幫你分配陸戰資源的參考。
-          </p>
-
-          <div className="mt-3 divide-y divide-paper-line">
-            {DEFAULT_FUNNEL_TIERS.map((t, i) => (
-              <TierInput key={t.key} label={t.label} value={tierCounts[i] ?? 0} onChange={(n) => setTierCounts((prev) => prev.map((x, j) => (j === i ? n : x)))} />
-            ))}
-          </div>
-
-          <div className="mt-4 flex items-baseline justify-between border-t-[3px] border-dashed border-gold pt-3">
-            <span className="font-serif text-base font-bold text-ink-soft">估票區間</span>
-            <span className="font-serif text-3xl font-black tabular-nums text-campaign">
-              {nf(funnel.low)} ~ {nf(funnel.high)} 票
-            </span>
-          </div>
-          {funnel.totalContacts > 0 && v && (
-            <p className="mt-1.5 text-xs text-ink-soft/80">
-              合計接觸 {nf(funnel.totalContacts)} 人次。對照：過半參考線 {nf(win.halfLine)} 票、退保證金門檻 {nf(deposit.votes)} 票。
-            </p>
-          )}
-
-          <details className="mt-3 border-t border-paper-line pt-2 text-ink-soft">
-            <summary className="cursor-pointer text-xs font-bold select-none">這個區間怎麼來的？</summary>
-            <div className="mt-2 space-y-1.5 text-[12px] leading-relaxed">
-              <p>每一階的轉換率是「建議區間」，不是本里實測數據——來源是群眾募資領域「輕度承諾 → 重度承諾」轉換率隨投入程度遞增的通則，跨領域借用僅供起始參考。</p>
-              <p>強烈建議你實際追蹤自己的加群數、連署數、志工報名數，用真實比例覆蓋這裡的預設值，數字才會越用越準。</p>
-              <p className="text-ink-soft/60">＊本工具不做「會不會選上」的二元判定，只提供估票區間，實際選情仍看當年參選人數與動員。</p>
-            </div>
-          </details>
-          </details>
-        </Panel>
 
         {/* ☀ 陽光民調（議題民調，免登入一鍵表態） */}
         <PollCard regionCode={v.region_code} />
