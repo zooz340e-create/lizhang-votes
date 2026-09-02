@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
 import { depositThreshold, winInsight, competition, voteShares } from './lib/calc';
 import { loadCounty, loadDemo, type VillageRow, type DemoFile } from './lib/data';
+import PollCard, { SIGNUP_FORM } from './PollCard';
 
 // 東區限定選情站 — 彰化市東區 22 里
 //
@@ -353,6 +354,9 @@ export default function EastApp() {
           )}
         </Panel>
 
+        {/* ☀ 陽光民調 */}
+        {v && <PollCard regionCode={v.region_code} />}
+
         {/* ── ② 台鳳里實戰案例 ── */}
         <Panel className="relative overflow-hidden">
           <SectionTag no="②" label="這不是紙上談兵——台鳳里，進行中" />
@@ -423,7 +427,11 @@ export default function EastApp() {
             對地方政治不滿，但手上只有四年一次的那張票？很多里甚至同額競選、連票都沒得投。
             這裡給你第一個「現在就能做」的參與動作——
           </p>
-          <div className="mt-4 grid gap-2">
+          <a href={SIGNUP_FORM} target="_blank" rel="noreferrer" className="mt-4 block border-[2.5px] border-gold-soft bg-gold/20 px-3 py-2.5 transition-colors hover:bg-gold/30">
+            <span className="block font-serif text-[15px] font-black text-paper">⚔️ 我要參選——數位競選總部報名</span>
+            <span className="block text-[11px] text-paper/70">缺空戰資源？願意公開金流的參選者，我們陪你打完 80 幾天</span>
+          </a>
+          <div className="mt-2 grid gap-2">
             {[
               { emoji: '🪙', t: '小額贊助計畫', d: '資助 COV 陪跑計畫（計畫營收，非政治獻金）' },
               { emoji: '🙋', t: '報名志工', d: '週末掃街、活動支援，跟一群想改變的人站在一起' },

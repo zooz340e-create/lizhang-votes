@@ -9,6 +9,7 @@ import {
   type CommitmentTier,
 } from './lib/calc';
 import { shareCard } from './lib/shareCard';
+import PollCard, { SIGNUP_FORM } from './PollCard';
 import { loadIndex, loadCounty, loadDemo, villageDemo, type VillageRow, type DataIndex, type DemoFile } from './lib/data';
 
 const nf = (n: number) => n.toLocaleString('zh-TW');
@@ -687,6 +688,9 @@ export default function App() {
           </details>
         </Panel>
 
+        {/* ☀ 陽光民調（議題民調，免登入一鍵表態） */}
+        <PollCard regionCode={v.region_code} />
+
         {/* 分區趣味數據：目前所選區之最 */}
         {best && (
         <section className="border-[3px] border-ink bg-white p-5 shadow-[5px_5px_0_0_var(--color-ink)]">
@@ -749,6 +753,17 @@ export default function App() {
             {cardBusy ? '產生中…' : '📇 下載選情圖卡（IG/FB 直式）'}
           </button>
         </section>
+
+        {/* ⚔️ 數位競選總部報名入口 */}
+        <a
+          href={SIGNUP_FORM}
+          target="_blank"
+          rel="noreferrer"
+          className="block border-[3px] border-ink bg-paper p-4 text-center shadow-[5px_5px_0_0_var(--color-ink)] transition-transform hover:-translate-y-0.5"
+        >
+          <p className="font-serif text-lg font-black text-ink">⚔️ 看完數字，想自己下場？</p>
+          <p className="mt-1 text-[13px] text-ink-soft">缺空戰資源的參選者，這裡報名「數位競選總部」——願意公開金流，就是我們要找的人。</p>
+        </a>
 
         {/* 免責 */}
         <footer className="space-y-1 px-1 text-center text-[11px] leading-relaxed text-ink-soft/70">
