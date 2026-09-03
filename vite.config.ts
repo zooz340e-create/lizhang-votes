@@ -13,6 +13,7 @@ export default defineConfig({
         plan: resolve(__dirname, 'plan.html'), // 選戰行程規劃（教練版工具）
         east: resolve(__dirname, 'east.html'), // 彰化東區 22 里限定選情站（名單轉換頁）
         shop: resolve(__dirname, 'shop.html'), // 友善商家地圖（候選人 CRM 第一版）
+        swipe: resolve(__dirname, 'swipe.html'), // 看板牆：候選人左滑右滑（彰化東區 22 里模板）
       },
     },
   },
