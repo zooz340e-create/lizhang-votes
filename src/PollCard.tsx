@@ -67,10 +67,23 @@ function fetchTally(): Promise<Tally> {
   });
 }
 
+// 流量來源標記（?src=fb / ig / th…）：進站時記到 sessionStorage，
+// 投票時附在里代碼後（格式 `里代碼#src=fb`），供跨平台轉換率分析。
+function trafficSource(): string {
+  try {
+    const url = new URLSearchParams(location.search).get('src');
+    if (url) sessionStorage.setItem('cov-src', url.slice(0, 12).replace(/[^a-zA-Z0-9_-]/g, ''));
+    return sessionStorage.getItem('cov-src') || '';
+  } catch {
+    return '';
+  }
+}
+
 async function submitVote(choice: Choice, region: string): Promise<void> {
+  const src = trafficSource();
   const body = new URLSearchParams();
   body.set(ENTRY_CHOICE, choice);
-  body.set(ENTRY_REGION, region);
+  body.set(ENTRY_REGION, src ? `${region}#src=${src}` : region);
   await fetch(POLL_FORM, { method: 'POST', mode: 'no-cors', body });
 }
 
