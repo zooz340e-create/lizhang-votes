@@ -10,3 +10,10 @@ screenshots/
 .vercel
 .env*
 etl/out/
+
+# 短影音產線
+video/node_modules/
+video/.cache/
+video/out/
+video/projects/*/media/*
+!video/projects/*/media/README.md

@@ -1,0 +1,65 @@
+{
+  "slug": "01-calculator",
+  "title": "全台最好選的里，36 票就當里長",
+  "width": 1080, "height": 1920, "fps": 30, "duration": 30,
+  "coverAt": 3.6,
+
+  "audio": {
+    "voiceover": "media/vo.m4a",
+    "music": "media/bgm.mp3",
+    "musicGain": 0.14,
+    "speechNorm": true
+  },
+
+  "shots": [
+    { "dur": 2.6, "type": "card", "variant": "ink",
+      "note": "換成：鄉間小路 / 里辦公處門口招牌，慢慢推進" },
+    { "dur": 3.4, "type": "card", "variant": "ink",
+      "note": "換成：花蓮那種安靜小聚落、老房子、幾乎沒人的街" },
+    { "dur": 3.6, "type": "card", "variant": "campaign",
+      "note": "換成：都市大社區空拍 / 一整排高樓，跟上一顆形成對比" },
+    { "dur": 3.4, "type": "card", "variant": "ink",
+      "note": "換成：人潮 / 車流，快節奏" },
+    { "dur": 4.0, "type": "card", "variant": "paper",
+      "note": "換成：手指滑手機的特寫" },
+    { "dur": 4.5, "type": "card", "variant": "paper",
+      "note": "換成：螢幕錄影 — 選縣市 → 選區 → 選里" },
+    { "dur": 4.5, "type": "card", "variant": "paper",
+      "note": "換成：螢幕錄影 — 三張卡往下滑" },
+    { "dur": 2.6, "type": "card", "variant": "ink",
+      "note": "換成：空拍拉遠 / 城市全景" },
+    { "dur": 1.4, "type": "card", "variant": "campaign",
+      "note": "結尾卡，維持圖文即可" }
+  ],
+
+  "captions": [
+    { "t": 0.15, "d": 2.3, "text": "全台最好選的里\n*36 票* 就能當里長" },
+    { "t": 2.7,  "d": 3.1, "text": "花蓮鳳林森榮里\n整個里只有 *80 個人* 有投票權" },
+    { "t": 6.1,  "d": 3.3, "text": "但高雄左營菜公里\n要 *7,934 票* 才選得上" },
+    { "t": 9.7,  "d": 3.1, "text": "同樣一個里長\n差了 *220 倍*" },
+    { "t": 13.1, "d": 3.7, "text": "所以重點不是「要幾票」\n是 *你家的里* 要幾票" },
+    { "t": 17.1, "d": 4.2, "text": "我做了一個免費工具\n選你家的里\n*三秒* 算給你看" },
+    { "t": 21.6, "d": 4.2, "text": "保證金門檻\n近三屆實際當選票\n還有 *參選機會指數*" },
+    { "t": 26.1, "d": 2.4, "text": "全台 *7,982 個里* 都查得到\n資料來自中選會" }
+  ],
+
+  "overlays": [
+    { "type": "chip", "t": 0.25, "d": 2.2, "x": 80, "y": 250, "text": "開票速報" },
+
+    { "type": "stat", "t": 3.0, "d": 2.9, "y": 600,
+      "value": 36, "unit": "票", "label": "就能當里長", "countDur": 0.8 },
+    { "type": "rule", "t": 3.3, "d": 2.6, "x": 420, "y": 1000, "w": 240 },
+
+    { "type": "stat", "t": 6.4, "d": 3.0, "y": 600,
+      "value": 7934, "unit": "票", "label": "才選得上", "countDur": 1.1 },
+    { "type": "rule", "t": 6.7, "d": 2.7, "x": 420, "y": 1000, "w": 240 },
+
+    { "type": "title", "t": 10.0, "d": 2.8, "y": 700, "align": "center",
+      "lines": ["差距", "*220 倍*"] },
+
+    { "type": "chip", "t": 17.3, "d": 8.5, "x": 80, "y": 250, "text": "免費・不用註冊" },
+
+    { "type": "cta", "t": 28.65, "d": 1.35, "y": 760, "in": 0.3, "out": 0.05,
+      "headline": "你家的里\n要幾票？", "url": "lizhang-votes.vercel.app" }
+  ]
+}

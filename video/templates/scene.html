@@ -1,0 +1,227 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>scene</title>
+<style>
+@font-face{font-family:NSTC;src:url(fonts/NotoSansTC-400.ttf);font-weight:400}
+@font-face{font-family:NSTC;src:url(fonts/NotoSansTC-700.ttf);font-weight:700}
+@font-face{font-family:NSTC;src:url(fonts/NotoSansTC-900.ttf);font-weight:900}
+
+:root{
+  --ink:#0b1f3a; --ink-soft:#1c3a5e; --campaign:#c0392b;
+  --gold:#d99a1c; --gold-soft:#f0c14b; --paper:#f6f1e7;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden}
+body{font-family:NSTC,sans-serif;background:transparent}
+body.bg{background:var(--paper)}
+#stage{position:relative;width:1080px;height:1920px}
+.el{position:absolute;will-change:transform,opacity}
+
+/* ---- 背景卡（card shot 用） ---- */
+.card{inset:0;width:1080px;height:1920px}
+.card.paper{background:var(--paper);
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 38px,rgba(11,31,58,.035) 38px,rgba(11,31,58,.035) 39px)}
+.card.ink{background:radial-gradient(120% 80% at 50% 18%,#1c3a5e 0%,#0b1f3a 62%,#071528 100%)}
+.card.campaign{background:radial-gradient(120% 80% at 50% 20%,#c0392b 0%,#962d24 60%,#6d1f19 100%)}
+.grain{position:absolute;inset:0;opacity:.16;mix-blend-mode:overlay}
+
+/* ---- 底部可讀性遮罩（實拍 B-roll 上字必備） ---- */
+.scrim{left:0;right:0;bottom:0;height:820px;
+  background:linear-gradient(to top,rgba(7,21,40,.86) 0%,rgba(7,21,40,.55) 38%,rgba(7,21,40,0) 100%)}
+.scrimTop{left:0;right:0;top:0;height:420px;
+  background:linear-gradient(to bottom,rgba(7,21,40,.62) 0%,rgba(7,21,40,0) 100%)}
+
+/* ---- 字幕 ---- */
+.caption{left:70px;width:940px;bottom:480px;text-align:center;
+  font-weight:900;font-size:66px;line-height:1.28;color:#fff;letter-spacing:.01em;
+  -webkit-text-stroke:13px rgba(7,21,40,.94);paint-order:stroke fill;
+  text-shadow:0 8px 34px rgba(0,0,0,.55)}
+.caption i{font-style:normal;color:var(--gold-soft)}
+
+/* ---- 大標題卡 ---- */
+.title{left:80px;width:920px}
+.title .ln{display:block;font-weight:900;font-size:104px;line-height:1.14;letter-spacing:-.01em}
+.title.on-dark .ln{color:#fff;text-shadow:0 10px 40px rgba(0,0,0,.4)}
+.title.on-light .ln{color:var(--ink)}
+.title .ln em{font-style:normal;color:var(--gold-soft)}
+.title.on-light .ln em{color:var(--campaign)}
+
+/* ---- 大數字 ---- */
+.stat{left:0;width:1080px;text-align:center}
+.stat .num{font-weight:900;font-size:280px;line-height:.92;letter-spacing:-.03em;
+  color:var(--gold-soft);text-shadow:0 14px 60px rgba(0,0,0,.45);font-variant-numeric:tabular-nums}
+.stat.on-light .num{color:var(--campaign);text-shadow:0 10px 30px rgba(192,57,43,.22)}
+.stat .unit{font-size:96px;letter-spacing:0}
+.stat .lab{margin-top:26px;font-weight:700;font-size:46px;letter-spacing:.14em;color:rgba(255,255,255,.86)}
+.stat.on-light .lab{color:var(--ink-soft)}
+
+/* ---- 速報標籤 ---- */
+.chip{display:inline-flex;align-items:center;gap:16px;
+  padding:18px 34px;background:var(--campaign);color:#fff;
+  font-weight:900;font-size:38px;letter-spacing:.16em;
+  box-shadow:0 10px 34px rgba(0,0,0,.35)}
+.chip .dot{width:18px;height:18px;border-radius:50%;background:var(--gold-soft)}
+
+/* ---- 結尾 CTA ---- */
+.cta{left:0;width:1080px;text-align:center}
+.cta .hd{font-weight:900;font-size:76px;line-height:1.2;color:#fff;text-shadow:0 10px 40px rgba(0,0,0,.45)}
+.cta .url{margin-top:38px;display:inline-block;padding:24px 48px;
+  background:var(--gold-soft);color:var(--ink);font-weight:900;font-size:46px;letter-spacing:.02em;
+  box-shadow:0 14px 44px rgba(0,0,0,.4)}
+
+/* ---- 規則線 ---- */
+.rule{height:8px;background:var(--gold-soft)}
+</style>
+
+<div id="stage"></div>
+
+<script>
+const SPEC = __SPEC__;
+
+/* ---------- 緩動（全部是 t 的純函式，確保逐格可重現） ---------- */
+const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const outCubic = x => 1 - Math.pow(1 - clamp01(x), 3);
+const outBack  = x => { const c = 1.70158 + 1; const u = clamp01(x) - 1;
+                        return 1 + (c + 1) * u * u * u + c * u * u; };
+const outExpo  = x => clamp01(x) >= 1 ? 1 : 1 - Math.pow(2, -9 * clamp01(x));
+
+/* 進場 / 出場包絡：回傳 {o:不透明度, p:進場進度 0→1} */
+function envelope(t, el) {
+  const IN = el.in ?? 0.38, OUT = el.out ?? 0.26;
+  const local = t - el.t;
+  if (local < 0 || local > el.d) return null;
+  const pIn = outCubic(local / IN);
+  const pOut = local > el.d - OUT ? 1 - outCubic((local - (el.d - OUT)) / OUT) : 1;
+  return { o: Math.min(pIn, pOut), p: clamp01(local / IN), local };
+}
+
+/* 高亮語法：文字裡的 *字* 會變成強調色 */
+const mark = s => String(s).replace(/\*([^*]+)\*/g, '<i>$1</i>').replace(/\n/g, '<br>');
+const markEm = s => String(s).replace(/\*([^*]+)\*/g, '<em>$1</em>');
+const commas = n => Math.round(n).toLocaleString('en-US');
+
+/* ---------- 各元素的繪製 ---------- */
+const R = {
+  card(el) {
+    const d = document.createElement('div');
+    d.className = 'el card ' + (el.variant || 'ink');
+    return d;
+  },
+  scrim(el) {
+    const d = document.createElement('div');
+    d.className = 'el ' + (el.edge === 'top' ? 'scrimTop' : 'scrim');
+    return d;
+  },
+  rule(el) {
+    const d = document.createElement('div');
+    d.className = 'el rule';
+    d.style.left = (el.x ?? 80) + 'px';
+    d.style.top = el.y + 'px';
+    d.style.width = (el.w ?? 200) + 'px';
+    return d;
+  },
+  caption(el) {
+    const d = document.createElement('div');
+    d.className = 'el caption';
+    d.style.bottom = (el.bottom ?? 480) + 'px';
+    d.innerHTML = mark(el.text);
+    return d;
+  },
+  title(el) {
+    const d = document.createElement('div');
+    d.className = 'el title ' + (el.tone === 'light' ? 'on-light' : 'on-dark');
+    d.style.top = (el.y ?? 700) + 'px';
+    if (el.align === 'center') d.style.textAlign = 'center';
+    d.innerHTML = el.lines.map(l => '<span class="ln">' + markEm(l) + '</span>').join('');
+    return d;
+  },
+  stat(el) {
+    const d = document.createElement('div');
+    d.className = 'el stat ' + (el.tone === 'light' ? 'on-light' : '');
+    d.style.top = (el.y ?? 720) + 'px';
+    d.innerHTML = '<div class="num"><span class="v"></span>'
+      + (el.unit ? '<span class="unit">' + el.unit + '</span>' : '') + '</div>'
+      + (el.label ? '<div class="lab">' + el.label + '</div>' : '');
+    return d;
+  },
+  chip(el) {
+    const w = document.createElement('div');
+    w.className = 'el';
+    w.style.left = (el.x ?? 80) + 'px';
+    w.style.top = (el.y ?? 250) + 'px';
+    w.innerHTML = '<span class="chip"><span class="dot"></span>' + el.text + '</span>';
+    return w;
+  },
+  cta(el) {
+    const d = document.createElement('div');
+    d.className = 'el cta';
+    d.style.top = (el.y ?? 820) + 'px';
+    d.innerHTML = '<div class="hd">' + mark(el.headline) + '</div>'
+      + '<div><span class="url">' + el.url + '</span></div>';
+    return d;
+  },
+};
+
+/* ---------- 逐格更新（只改 transform / opacity） ---------- */
+const U = {
+  caption(node, e, el) {
+    node.style.opacity = e.o;
+    node.style.transform = 'translateY(' + ((1 - outBack(e.p)) * 46) + 'px) scale(' + (0.94 + 0.06 * outBack(e.p)) + ')';
+  },
+  title(node, e, el) {
+    node.style.opacity = 1;
+    const lns = node.querySelectorAll('.ln');
+    lns.forEach((ln, i) => {
+      const p = clamp01((e.local - i * 0.13) / (el.in ?? 0.45));
+      ln.style.opacity = e.o * outCubic(p);
+      ln.style.transform = 'translateY(' + ((1 - outExpo(p)) * 70) + 'px)';
+    });
+  },
+  stat(node, e, el) {
+    node.style.opacity = e.o;
+    const grow = outCubic(clamp01(e.local / 0.5));
+    node.style.transform = 'scale(' + (0.86 + 0.14 * grow) + ')';
+    const dur = el.countUp === false ? 0 : (el.countDur ?? 0.9);
+    const p = dur > 0 ? outExpo(clamp01(e.local / dur)) : 1;
+    node.querySelector('.v').textContent =
+      typeof el.value === 'number' ? commas(el.value * p) : el.value;
+  },
+  chip(node, e) {
+    node.style.opacity = e.o;
+    node.style.transform = 'translateX(' + ((1 - outExpo(e.p)) * -60) + 'px)';
+  },
+  cta(node, e) {
+    node.style.opacity = e.o;
+    node.style.transform = 'translateY(' + ((1 - outBack(e.p)) * 40) + 'px)';
+  },
+  rule(node, e) {
+    node.style.opacity = e.o;
+    node.style.transformOrigin = 'left center';
+    node.style.transform = 'scaleX(' + outExpo(e.p) + ')';
+  },
+  card(node, e) { node.style.opacity = e.o; },
+  scrim(node, e) { node.style.opacity = e.o; },
+};
+
+/* ---------- 建立節點（一次），之後只 seek ---------- */
+const stage = document.getElementById('stage');
+if (SPEC.mode === 'bg') document.body.classList.add('bg');
+const nodes = SPEC.elements.map(el => {
+  const n = R[el.type](el);
+  n.style.opacity = 0;
+  stage.appendChild(n);
+  return n;
+});
+
+window.seek = function (t) {
+  SPEC.elements.forEach((el, i) => {
+    const e = envelope(t, el);
+    const n = nodes[i];
+    if (!e) { n.style.opacity = 0; n.style.visibility = 'hidden'; return; }
+    n.style.visibility = 'visible';
+    (U[el.type] || U.card)(n, e, el);
+  });
+};
+
+window.ready = document.fonts.ready.then(() => { window.seek(0); return true; });
+</script>

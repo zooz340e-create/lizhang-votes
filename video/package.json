@@ -1,0 +1,14 @@
+{
+  "name": "lizhang-video",
+  "private": true,
+  "type": "module",
+  "description": "短影音產線：config.json + 素材 → 1080x1920 MP4",
+  "scripts": {
+    "setup": "node setup.mjs",
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "playwright": "^1.49.0"
+  }
+}
