@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+  xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:podcast="https://podcastindex.org/namespace/1.0">
+  <channel>
+    <title>先問，為什麼？ Start with a why</title>
+    <link>https://lizhang-votes.vercel.app/podcast/</link>
+    <atom:link href="https://lizhang-votes.vercel.app/podcast/feed.xml" rel="self" type="application/rss+xml"/>
+    <language>zh-tw</language>
+    <copyright>© 2026 bblawyer studio</copyright>
+    <lastBuildDate>Fri, 04 Sep 2026 09:30:45 GMT</lastBuildDate>
+    <description><![CDATA[我們不只討論喜歡什麼，更追問為什麼喜歡。
+
+主持人蔡承諺（Yenyen），法律顧問，2022 年以無黨籍身分參選彰化市台鳳里里長，732 票、第二高票。四年後他做了「里長練習生計畫」（C.O.V.，Chef of a Village）和「數位競選辦公室」，陪第一次參選的人把「要不要選」變成可以計算的決定。
+
+這個節目每一集都從同一個問題開始：你為什麼要做這件事？來賓有第一次參選的里長候選人、開店的人、做地方的人，也有測謊師、心理師、律師。不談政見、不談政黨，只談人。
+
+工具：里長票數計算機 lizhang-votes.vercel.app]]></description>
+    <itunes:summary>我們不只討論喜歡什麼，更追問為什麼喜歡。
+
+主持人蔡承諺（Yenyen），法律顧問，2022 年以無黨籍身分參選彰化市台鳳里里長，732 票、第二高票。四年後他做了「里長練習生計畫」（C.O.V.，Chef of a Village）和「數位競選辦公室」，陪第一次參選的人把「要不要選」變成可以計算的決定。
+
+這個節目每一集都從同一個問題開始：你為什麼要做這件事？來賓有第一次參選的里長候選人、開店的人、做地方的人，也有測謊師、心理師、律師。不談政見、不談政黨，只談人。
+
+工具：里長票數計算機 lizhang-votes.vercel.app</itunes:summary>
+    <itunes:subtitle>Start with a why</itunes:subtitle>
+    <itunes:author>蔡承諺 Yenyen</itunes:author>
+    <itunes:owner>
+      <itunes:name>蔡承諺</itunes:name>
+      <itunes:email>iamsterdam0918@gmail.com</itunes:email>
+    </itunes:owner>
+    <itunes:image href="https://lizhang-votes.vercel.app/podcast/cover.jpg"/>
+    <image>
+      <url>https://lizhang-votes.vercel.app/podcast/cover.jpg</url>
+      <title>先問，為什麼？ Start with a why</title>
+      <link>https://lizhang-votes.vercel.app/podcast/</link>
+    </image>
+    <itunes:category text="Society &amp; Culture"/>
+    <itunes:category text="Government"/>
+    <itunes:category text="Business">
+      <itunes:category text="Entrepreneurship"/>
+    </itunes:category>
+    <itunes:explicit>false</itunes:explicit>
+    <itunes:type>episodic</itunes:type>
+    <itunes:keywords>里長, 選舉, 地方政治, 彰化, 創業, 為什麼, Start with Why, 公民參與, 社區, 里長練習生</itunes:keywords>
+    <podcast:locked>no</podcast:locked>
+
+  </channel>
+</rss>

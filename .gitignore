@@ -10,3 +10,6 @@ screenshots/
 .vercel
 .env*
 etl/out/
+
+# Podcast 腳本草稿只留本機與 Obsidian，不進公開 repo
+podcast/EP*_腳本.md

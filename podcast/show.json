@@ -1,0 +1,33 @@
+{
+  "_說明": "Podcast《先問，為什麼？》的節目設定。改這個檔 → 跑 node etl/podcast_feed.mjs → 產出 public/podcast/feed.xml 與 public/podcast/index.html → git push。Apple Podcasts / Spotify 只吃 feed.xml。",
+  "baseUrl": "https://lizhang-votes.vercel.app/podcast",
+  "siteUrl": "https://lizhang-votes.vercel.app/podcast/",
+  "title": "先問，為什麼？",
+  "subtitle": "Start with a why",
+  "author": "蔡承諺 Yenyen",
+  "ownerName": "蔡承諺",
+  "ownerEmail": "iamsterdam0918@gmail.com",
+  "copyright": "© 2026 bblawyer studio",
+  "language": "zh-tw",
+  "categories": [
+    { "name": "Society & Culture" },
+    { "name": "Government" },
+    { "name": "Business", "sub": "Entrepreneurship" }
+  ],
+  "explicit": false,
+  "type": "episodic",
+  "image": "cover.jpg",
+  "description": "我們不只討論喜歡什麼，更追問為什麼喜歡。\n\n主持人蔡承諺（Yenyen），法律顧問，2022 年以無黨籍身分參選彰化市台鳳里里長，732 票、第二高票。四年後他做了「里長練習生計畫」（C.O.V.，Chef of a Village）和「數位競選辦公室」，陪第一次參選的人把「要不要選」變成可以計算的決定。\n\n這個節目每一集都從同一個問題開始：你為什麼要做這件事？來賓有第一次參選的里長候選人、開店的人、做地方的人，也有測謊師、心理師、律師。不談政見、不談政黨，只談人。\n\n工具：里長票數計算機 lizhang-votes.vercel.app",
+  "keywords": "里長, 選舉, 地方政治, 彰化, 創業, 為什麼, Start with Why, 公民參與, 社區, 里長練習生",
+  "episodes": [
+    {
+      "number": 0,
+      "type": "trailer",
+      "title": "EP0｜先問，為什麼？里長練習生計畫與數位競選辦公室",
+      "file": "ep0.mp3",
+      "pubDate": "2026-09-05T00:00:00+08:00",
+      "summary": "四年前站在垃圾車旁邊三個月、拿了 732 票的人，為什麼四年後要做一個幫別人選里長的計畫？第 0 集，主持人 Yenyen 一個人把「為什麼」講清楚：里長練習生計畫是什麼、數位競選辦公室在解什麼問題、這個節目為什麼叫「先問，為什麼？」。",
+      "notes": "<p>四年前站在垃圾車旁邊三個月、拿了 732 票的人，為什麼四年後要做一個幫別人選里長的計畫？</p><p>第 0 集，主持人 Yenyen 一個人把「為什麼」講清楚：</p><ul><li>2022 台鳳里：三個候選人、第二名、732 票、然後掉進很暗的地方</li><li>兩年法務、兩百多個社區教會他的一件事：管社區就是做專案</li><li>里長練習生計畫（C.O.V.，Chef of a Village）：里長可以是你在家鄉開的第一間店</li><li>數位競選辦公室：把「要不要選」變成可以計算的決定。里長票數計算機、陽光民調、看板牆</li><li>這個節目為什麼叫「先問，為什麼？」：品味不是知道什麼好，而是知道自己為什麼喜歡</li></ul><p>工具與連結：</p><ul><li>里長票數計算機 <a href=\"https://lizhang-votes.vercel.app\">lizhang-votes.vercel.app</a></li><li>看板牆 <a href=\"https://lizhang-votes.vercel.app/swipe.html\">lizhang-votes.vercel.app/swipe.html</a></li><li>數位競選辦公室報名 <a href=\"https://docs.google.com/forms/d/e/1FAIpQLScyMUmyraHfbrFSpxaBSJzwvc_LYuWpVF4_Kh49ua3UrC6ypA/viewform\">報名表單</a></li></ul><p>法律聲明：本計畫的販售與服務所得為計畫營收，不收受、不代收政治獻金；政治獻金請依法捐入候選人經監察院許可之專戶。</p>"
+    }
+  ]
+}
