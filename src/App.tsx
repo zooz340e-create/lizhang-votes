@@ -253,6 +253,13 @@ export default function App() {
         </div>
       </header>
 
+      {/* 頂端一鍵民調：進站第一眼的低摩擦互動鉤子（尚未選里時顯示；選里後改由結果區的民調承接）*/}
+      {!v && (
+        <div className="mt-5">
+          <PollCard regionCode="" />
+        </div>
+      )}
+
       {/* 引導式三層選單：縣市 → 區 → 里（逐步出現）*/}
       <div className="mt-5 space-y-2">
         <label className="block font-serif text-sm font-bold tracking-wide text-ink-soft">跟著選你的里 👇</label>

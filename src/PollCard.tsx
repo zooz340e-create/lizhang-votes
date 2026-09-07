@@ -16,7 +16,8 @@ const SHEET_ID = '1ce9VKGKKJL4LevfSCqcMR8qszI9Dvi9vcu1_wOCGv8s';
 export const SIGNUP_FORM =
   'https://docs.google.com/forms/d/e/1FAIpQLScyMUmyraHfbrFSpxaBSJzwvc_LYuWpVF4_Kh49ua3UrC6ypA/viewform';
 
-const CHOICES = ['會更支持他', '不影響我的決定', '不會支持'] as const;
+// 選項刻意只留兩個（移除「不會支持」）：實測有人看錯或來亂，二選一更乾淨、口徑更聚焦
+const CHOICES = ['會更支持他', '不影響我的決定'] as const;
 type Choice = (typeof CHOICES)[number];
 const VOTED_KEY = 'cov-sunshine-vote';
 const BLACKOUT_START = new Date('2026-11-18T00:00:00'); // 投票日前 10 天，保守隱藏統計
@@ -43,7 +44,7 @@ function fetchTally(): Promise<Tally> {
     }, 10_000);
     w[cb] = (resp: { table?: { rows?: Array<{ c: Array<{ v?: unknown } | null> }> } }) => {
       clearTimeout(timer);
-      const counts: Record<Choice, number> = { 會更支持他: 0, 不影響我的決定: 0, 不會支持: 0 };
+      const counts: Record<Choice, number> = { 會更支持他: 0, 不影響我的決定: 0 };
       let total = 0;
       for (const row of resp.table?.rows ?? []) {
         const choice = String(row.c?.[1]?.v ?? '') as Choice;
@@ -109,7 +110,9 @@ export default function PollCard({ regionCode }: { regionCode: string }) {
   }, [blackout]);
 
   async function vote(c: Choice) {
-    if (voted || busy) return;
+    // readVoted() 再查一次：民調同時出現在頁首與結果區兩處，
+    // 防止同裝置在另一個實例重複投票（localStorage 為單一真值來源）
+    if (voted || busy || readVoted()) return;
     setBusy(true);
     try {
       await submitVote(c, regionCode);
