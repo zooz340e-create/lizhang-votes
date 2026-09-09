@@ -7,7 +7,9 @@
 //  - 登記 ≠ 審定；正式候選人名單以選委會公告為準。
 //  - 照片／政見／背景：只放候選人公開頁面或候選人本人提供的內容，其餘留空（front/back 為 undefined）。
 
-export type Party = 'KMT' | 'DPP' | 'IND';
+import type { Party } from './candidates';
+export type { Party } from './candidates';
+export { PARTY_LABEL } from './candidates';
 
 export interface DaanCandidate {
   id: string;
@@ -26,12 +28,6 @@ export interface DaanCandidate {
   tags?: string[];
   source?: string; // 資料來源說明
 }
-
-export const PARTY_LABEL: Record<Party, string> = {
-  KMT: '中國國民黨',
-  DPP: '民主進步黨',
-  IND: '無黨籍',
-};
 
 const K: Party = 'KMT';
 const D: Party = 'DPP';

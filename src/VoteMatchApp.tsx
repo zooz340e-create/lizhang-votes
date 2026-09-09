@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DAAN_2026, DAAN_META, PARTY_LABEL, type DaanCandidate, type Party } from './lib/daan2026';
+import { type Cand, type Party, partyLabel } from './lib/candidates';
+import { DAAN_2026, DAAN_META, type DaanCandidate } from './lib/daan2026';
+import { CHANGHUA_2026, CHANGHUA_META, CHANGHUA_TOWNS } from './lib/changhua2026';
 import { SIGNUP_FORM } from './PollCard';
 
-// VoteMatch — 里長候選人「政治美感」左滑／右滑／收藏（計算機頁面二，第一版）
+// VoteMatch — 里長候選人「政治美感」左滑／右滑／收藏（計算機頁面二）
 //
-// 資料：115 年臺北市大安區里長選舉候選人登記冊（53 里、86 位，115/09/04）。
-// 第一版只有龍淵里林晏慈一張卡有照片與文案（候選人公開頁面），其餘卡片先留空：
-// 正面用「大字姓氏看板」當肖像位，背面寫「資料待候選人提供」＋報名 CTA。
+// 區域：臺北市大安區（登記冊 115/09/04，53 里 86 位）＋ 彰化縣 26 鄉鎮市（概況表 115/09/04，1,040 位），
+// 以 ?r=<鄉鎮市> 切換，預設大安區。每個區域各自一副牌、各自記錄。
+// 只有候選人公開頁面／本人提供的卡片有照片與文案，其餘留空：正面「大字姓氏看板」、背面「資料待候選人提供」＋補資料 CTA。
 //
 // 法律定調（勿改動）：
 //  - 問的是「這張卡的政治美感你有沒有感覺」（印象／美感），不是候選人支持度調查。
@@ -15,17 +17,38 @@ import { SIGNUP_FORM } from './PollCard';
 //  - 選前十日（11/18 起）本頁不新增任何統計顯示。
 
 const LINE_URL = 'https://line.me/R/ti/p/%40449kyids';
-const STORE_KEY = 'cov-votematch-daan-v1';
 const SWIPE_THRESHOLD = 100;
 
 type Verdict = 'like' | 'skip';
 interface Store { idx: number; verdicts: Record<string, Verdict>; saved: string[]; order: string[] }
 
+interface Region { key: string; county: string; town: string; label: string; source: string; cards: Cand[] }
+
+const daanToCand = (d: DaanCandidate): Cand => ({ ...d, county: '臺北市', town: '大安區', village: `${d.li}里` });
+
+const REGIONS: Region[] = [
+  { key: '大安區', county: '臺北市', town: '大安區', label: '臺北市大安區', source: `${DAAN_META.source}（製表 ${DAAN_META.compiledAt}）`, cards: DAAN_2026.map(daanToCand) },
+  ...CHANGHUA_TOWNS.map((t) => ({
+    key: t,
+    county: '彰化縣',
+    town: t,
+    label: `彰化縣${t}`,
+    source: `${CHANGHUA_META.source}（製表 ${CHANGHUA_META.compiledAt}）`,
+    cards: CHANGHUA_2026.filter((c) => c.town === t),
+  })),
+];
+
+function regionFromUrl(): Region {
+  const r = new URLSearchParams(location.search).get('r');
+  return REGIONS.find((x) => x.key === r) ?? REGIONS[0];
+}
+
 interface Palette { bg: string; bg2: string; fg: string; accent: string }
-const PARTY_PALETTE: Record<Party, Palette | null> = {
+const PARTY_PALETTE: Partial<Record<Party, Palette>> = {
   DPP: { bg: '#1b7a3a', bg2: '#0f5527', fg: '#ffffff', accent: '#f0c14b' },
   KMT: { bg: '#10269e', bg2: '#0a1a6b', fg: '#ffffff', accent: '#f0c14b' },
-  IND: null,
+  TPP: { bg: '#1f9e9e', bg2: '#157070', fg: '#ffffff', accent: '#ffffff' },
+  NPP: { bg: '#c9a400', bg2: '#8f7400', fg: '#0b1f3a', accent: '#0b1f3a' },
 };
 const IND_PALETTES: Palette[] = [
   { bg: '#1e5045', bg2: '#123128', fg: '#f6f1e7', accent: '#f0c14b' },
@@ -34,28 +57,27 @@ const IND_PALETTES: Palette[] = [
   { bg: '#3d2b5a', bg2: '#26183a', fg: '#f6f1e7', accent: '#f0c14b' },
 ];
 
-function paletteFor(c: DaanCandidate, seq: number): Palette {
-  return PARTY_PALETTE[c.party] ?? IND_PALETTES[seq % IND_PALETTES.length];
+function storeKey(r: Region) {
+  return `cov-votematch-${r.key}-v1`;
 }
-
-function readStore(): Store | null {
+function readStore(r: Region): Store | null {
   try {
-    const s = localStorage.getItem(STORE_KEY);
+    const s = localStorage.getItem(storeKey(r));
     return s ? (JSON.parse(s) as Store) : null;
   } catch {
     return null;
   }
 }
-function writeStore(s: Store) {
+function writeStore(r: Region, s: Store) {
   try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(s));
+    localStorage.setItem(storeKey(r), JSON.stringify(s));
   } catch {
     /* 私密視窗：本次可玩，不記憶 */
   }
 }
 
 // ── 正面 ─────────────────────────────────────────────────
-function Front({ c, p }: { c: DaanCandidate; p: Palette }) {
+function Front({ c, p }: { c: Cand; p: Palette }) {
   if (c.front) {
     return (
       <div className="absolute inset-0 overflow-hidden bg-ink text-left">
@@ -64,7 +86,7 @@ function Front({ c, p }: { c: DaanCandidate; p: Palette }) {
         <span className="absolute right-3 top-3 rounded-full border border-white/50 bg-black/40 px-2.5 py-1 text-[11px] font-bold text-white">點一下翻面 ↻</span>
         <div className="absolute inset-x-0 bottom-0 p-5 text-white">
           <div className="font-serif text-[40px] font-black leading-none" style={{ textShadow: '0 2px 12px rgba(0,0,0,.4)' }}>{c.name}</div>
-          <div className="mt-1.5 text-[12.5px] font-bold tracking-wider opacity-95">{PARTY_LABEL[c.party]} · 大安區{c.li}里</div>
+          <div className="mt-1.5 text-[12.5px] font-bold tracking-wider opacity-95">{partyLabel(c)} · {c.town}{c.village}</div>
           {c.tags && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {c.tags.map((t) => (
@@ -76,14 +98,13 @@ function Front({ c, p }: { c: DaanCandidate; p: Palette }) {
       </div>
     );
   }
-  // 沒有照片：大字姓氏看板（圖先空著）
   const surname = [...c.name][0] ?? '';
   return (
     <div className="absolute inset-0 overflow-hidden text-left" style={{ background: `linear-gradient(160deg, ${p.bg} 0%, ${p.bg2} 100%)`, color: p.fg }}>
       <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: `repeating-linear-gradient(135deg, ${p.fg} 0 2px, transparent 2px 14px)` }} />
       <div className="absolute left-4 top-4" style={{ writingMode: 'vertical-rl' }}>
         <span className="border-[2.5px] px-1.5 py-2 font-serif text-[16px] font-black tracking-[0.35em]" style={{ borderColor: p.fg }}>
-          大安區 {c.li}里
+          {c.town} {c.village}
         </span>
       </div>
       <span className="absolute right-3 top-3 rounded-full border px-2.5 py-1 text-[11px] font-bold" style={{ borderColor: p.fg + '88' }}>點一下翻面 ↻</span>
@@ -96,7 +117,7 @@ function Front({ c, p }: { c: DaanCandidate; p: Palette }) {
       <div className="absolute inset-x-0 bottom-0 p-5">
         <div className="font-serif text-[56px] font-black leading-none tracking-[0.04em]" style={{ textShadow: '0 4px 0 rgba(0,0,0,0.25)' }}>{c.name}</div>
         <div className="mt-2 flex items-center gap-2 text-[12px] font-bold">
-          <span className="rounded-sm border px-1.5 py-0.5" style={{ borderColor: p.fg + '88' }}>{PARTY_LABEL[c.party]}</span>
+          <span className="rounded-sm border px-1.5 py-0.5" style={{ borderColor: p.fg + '88' }}>{partyLabel(c)}</span>
           <span className="opacity-80">登記序號 {c.regNo}（非號次）</span>
         </div>
         <div className="mt-3 -mx-5 -mb-5 px-5 py-2.5 font-serif text-[14px] font-black tracking-wider" style={{ background: p.accent, color: p.bg2 }}>
@@ -108,7 +129,7 @@ function Front({ c, p }: { c: DaanCandidate; p: Palette }) {
 }
 
 // ── 背面 ─────────────────────────────────────────────────
-function Back({ c, p }: { c: DaanCandidate; p: Palette }) {
+function Back({ c, p }: { c: Cand; p: Palette }) {
   const hasContent = !!(c.slogans?.length || c.tagline || c.titles || c.background);
   return (
     <div className="absolute inset-0 overflow-auto bg-paper text-left text-ink" style={{ transform: 'rotateY(180deg)' }}>
@@ -116,7 +137,7 @@ function Back({ c, p }: { c: DaanCandidate; p: Palette }) {
       <div className="p-4">
         <div className="flex items-center gap-3">
           {c.avatar ? (
-            <img src={c.avatar} alt="" className="h-12 w-12 rounded-full object-cover border-2 border-paper-line" />
+            <img src={c.avatar} alt="" className="h-12 w-12 rounded-full border-2 border-paper-line object-cover" />
           ) : (
             <div className="flex h-12 w-12 items-center justify-center rounded-full font-serif text-[22px] font-black" style={{ background: p.bg, color: p.fg }}>{[...c.name][0]}</div>
           )}
@@ -124,7 +145,7 @@ function Back({ c, p }: { c: DaanCandidate; p: Palette }) {
             <div className="font-serif text-[24px] font-black leading-tight">
               {c.name}{c.nick ? `（${c.nick}）` : ''}
             </div>
-            <div className="text-[11px] font-bold text-ink-soft">{PARTY_LABEL[c.party]} · 臺北市大安區{c.li}里 · 登記序號 {c.regNo}（非號次）</div>
+            <div className="text-[11px] font-bold text-ink-soft">{partyLabel(c)} · {c.county}{c.town}{c.village} · 登記序號 {c.regNo}（非號次）</div>
           </div>
         </div>
 
@@ -167,10 +188,11 @@ function Back({ c, p }: { c: DaanCandidate; p: Palette }) {
 
 // ── 主程式 ───────────────────────────────────────────────
 export default function VoteMatchApp() {
+  const [region, setRegion] = useState<Region>(() => regionFromUrl());
   const cards = useMemo(() => {
     let seq = 0;
-    return DAAN_2026.map((c) => ({ c, p: paletteFor(c, c.party === 'IND' ? seq++ : 0) }));
-  }, []);
+    return region.cards.map((c) => ({ c, p: PARTY_PALETTE[c.party] ?? IND_PALETTES[seq++ % IND_PALETTES.length] }));
+  }, [region]);
 
   const [idx, setIdx] = useState(0);
   const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({});
@@ -183,18 +205,32 @@ export default function VoteMatchApp() {
   const startRef = useRef<{ x: number; y: number; id: number } | null>(null);
   const movedRef = useRef(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const loadedRef = useRef(false);
 
+  // 切區：還原該區進度，並同步網址 ?r=
   useEffect(() => {
-    const s = readStore();
+    loadedRef.current = false;
+    const s = readStore(region);
     if (s && s.order.length === cards.length && s.order.every((id, i) => id === cards[i].c.id)) {
       setIdx(Math.min(s.idx, cards.length));
       setVerdicts(s.verdicts);
       setSaved(s.saved ?? []);
+    } else {
+      setIdx(0);
+      setVerdicts({});
+      setSaved([]);
     }
-  }, [cards]);
+    setFlipped(false);
+    const u = new URL(location.href);
+    if (region === REGIONS[0]) u.searchParams.delete('r');
+    else u.searchParams.set('r', region.key);
+    history.replaceState(null, '', u.toString());
+    loadedRef.current = true;
+  }, [region, cards]);
   useEffect(() => {
-    writeStore({ idx, verdicts, saved, order: cards.map((x) => x.c.id) });
-  }, [idx, verdicts, saved, cards]);
+    if (!loadedRef.current) return;
+    writeStore(region, { idx, verdicts, saved, order: cards.map((x) => x.c.id) });
+  }, [idx, verdicts, saved, cards, region]);
 
   const current = cards[idx];
   const done = idx >= cards.length;
@@ -238,7 +274,7 @@ export default function VoteMatchApp() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (done) return;
+      if (done || (e.target as HTMLElement | null)?.tagName === 'SELECT') return;
       if (e.key === 'ArrowLeft') commit('skip');
       else if (e.key === 'ArrowRight') commit('like');
       else if (e.key === 'ArrowUp' || e.key === 's') save();
@@ -290,6 +326,7 @@ export default function VoteMatchApp() {
       : { transform: 'translate(0,0) rotate(0)', transition: 'transform 260ms cubic-bezier(.2,.9,.3,1.2)' };
 
   const likeCount = Object.values(verdicts).filter((v) => v === 'like').length;
+  const villages = useMemo(() => new Set(cards.map((x) => x.c.village)).size, [cards]);
   const savedCards = saved.map((id) => cards.find((x) => x.c.id === id)).filter((x): x is (typeof cards)[number] => !!x);
 
   return (
@@ -297,16 +334,33 @@ export default function VoteMatchApp() {
       <header className="flex items-center justify-between">
         <div>
           <div className="text-[11px] font-bold tracking-[0.3em] text-ink-soft">COV 里長練習生計畫 · 頁面二</div>
-          <h1 className="font-serif text-[26px] font-black leading-tight">
-            VoteMatch<span className="ml-2 text-[13px] font-bold text-campaign">大安區 {DAAN_META.villages} 里 · {DAAN_META.candidates} 位</span>
-          </h1>
+          <h1 className="font-serif text-[26px] font-black leading-tight">VoteMatch</h1>
         </div>
         <button onClick={() => setShowSaved(true)} className="border-[2.5px] border-ink bg-white px-2.5 py-1.5 text-[12px] font-bold shadow-[3px_3px_0_0_var(--color-ink)]">
           ⭐ {saved.length}
         </button>
       </header>
+
+      {/* 區域切換 */}
+      <label className="mt-3 flex items-center gap-2 text-[12px] font-bold text-ink-soft">
+        <span className="shrink-0">區域</span>
+        <select
+          value={region.key}
+          onChange={(e) => setRegion(REGIONS.find((r) => r.key === e.target.value) ?? REGIONS[0])}
+          className="w-full border-[2.5px] border-ink bg-white px-2 py-1.5 font-serif text-[15px] font-black text-ink"
+        >
+          <optgroup label="臺北市">
+            <option value={REGIONS[0].key}>大安區（{REGIONS[0].cards.length} 位）</option>
+          </optgroup>
+          <optgroup label="彰化縣">
+            {REGIONS.slice(1).map((r) => (
+              <option key={r.key} value={r.key}>{r.town}（{r.cards.length} 位）</option>
+            ))}
+          </optgroup>
+        </select>
+      </label>
       <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-        <b className="text-ink">右滑＝有感</b>、<b className="text-ink">左滑＝略過</b>、<b className="text-ink">⭐ 收藏</b>，點一下翻到政見面。這是「政治美感」不是支持度；你的滑動只存在你的手機。
+        {region.label} {villages} 里 · {cards.length} 位。<b className="text-ink">右滑＝有感</b>、<b className="text-ink">左滑＝略過</b>、<b className="text-ink">⭐ 收藏</b>，點一下翻到政見面。這是「政治美感」不是支持度；滑動只存在你的手機。
       </p>
 
       <div className="mt-3">
@@ -315,11 +369,11 @@ export default function VoteMatchApp() {
           <span>有感 {likeCount} · 收藏 {saved.length}</span>
         </div>
         <div className="mt-1 h-1.5 w-full bg-paper-line">
-          <div className="h-full bg-campaign transition-[width]" style={{ width: `${(Math.min(idx, cards.length) / cards.length) * 100}%` }} />
+          <div className="h-full bg-campaign transition-[width]" style={{ width: `${cards.length ? (Math.min(idx, cards.length) / cards.length) * 100 : 0}%` }} />
         </div>
       </div>
 
-      {done && <Summary cards={cards.map((x) => x.c)} verdicts={verdicts} saved={saved} onReset={reset} />}
+      {done && <Summary region={region} cards={cards.map((x) => x.c)} verdicts={verdicts} saved={saved} onReset={reset} />}
 
       {!done && (
         <div className="relative mt-4 aspect-[5/7] w-full" style={{ perspective: '1400px', touchAction: 'none' }}>
@@ -364,14 +418,14 @@ export default function VoteMatchApp() {
       {!done && <p className="mt-3 text-center text-[11px] text-ink-soft/70">鍵盤：← 略過 · → 有感 · ↑ 收藏 · 空白鍵翻面 · Backspace 復原</p>}
 
       <footer className="mt-auto pt-8 text-[11px] leading-relaxed text-ink-soft/70">
-        資料：{DAAN_META.source}（登記期間 {DAAN_META.registerFrom}–{DAAN_META.registerTo}，製表 {DAAN_META.compiledAt}）。「登記序號」不是號次；正式候選人與號次以選委會公告為準。
+        資料：{region.source}。「登記序號」不是號次；正式候選人與號次以選委會公告為準。
         照片與政見僅放候選人公開頁面或本人提供之內容，其餘卡片留空待補。本頁問的是政治美感／印象，不是支持度調查；你的滑動與收藏只存在你自己的手機裡，不上傳、不統計、不公布。
       </footer>
 
       {showSaved && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45" onClick={() => setShowSaved(false)}>
-          <div className="w-full max-w-md max-h-[70vh] overflow-auto border-t-[3px] border-ink bg-paper p-4 text-left" onClick={(e) => e.stopPropagation()}>
-            <div className="font-serif text-[20px] font-black">⭐ 你的收藏</div>
+          <div className="max-h-[70vh] w-full max-w-md overflow-auto border-t-[3px] border-ink bg-paper p-4 text-left" onClick={(e) => e.stopPropagation()}>
+            <div className="font-serif text-[20px] font-black">⭐ 你的收藏 · {region.town}</div>
             {savedCards.length === 0 ? (
               <p className="mt-2 text-[13px] text-ink-soft">還沒有收藏。按 ⭐ 把候選人存起來。</p>
             ) : (
@@ -381,7 +435,7 @@ export default function VoteMatchApp() {
                     {x.c.avatar ? <img src={x.c.avatar} alt="" className="h-10 w-10 rounded-full object-cover" /> : <span className="flex h-10 w-10 items-center justify-center rounded-full font-serif font-black" style={{ background: x.p.bg, color: x.p.fg }}>{[...x.c.name][0]}</span>}
                     <div>
                       <div className="font-serif font-black">{x.c.name}</div>
-                      <div className="text-[11px] text-ink-soft">{PARTY_LABEL[x.c.party]} · {x.c.li}里</div>
+                      <div className="text-[11px] text-ink-soft">{partyLabel(x.c)} · {x.c.village}</div>
                     </div>
                   </li>
                 ))}
@@ -395,27 +449,28 @@ export default function VoteMatchApp() {
   );
 }
 
-function Summary({ cards, verdicts, saved, onReset }: { cards: DaanCandidate[]; verdicts: Record<string, Verdict>; saved: string[]; onReset: () => void }) {
+function Summary({ region, cards, verdicts, saved, onReset }: { region: Region; cards: Cand[]; verdicts: Record<string, Verdict>; saved: string[]; onReset: () => void }) {
   const liked = cards.filter((c) => verdicts[c.id] === 'like');
-  const byLi = new Map<string, DaanCandidate[]>();
+  const byVillage = new Map<string, Cand[]>();
   for (const c of liked) {
-    if (!byLi.has(c.li)) byLi.set(c.li, []);
-    byLi.get(c.li)!.push(c);
+    if (!byVillage.has(c.village)) byVillage.set(c.village, []);
+    byVillage.get(c.village)!.push(c);
   }
+  const villagesTotal = new Set(cards.map((c) => c.village)).size;
   return (
     <div className="mt-4 border-[3px] border-ink bg-white p-5 shadow-[6px_6px_0_0_var(--color-ink)] text-left">
-      <div className="text-[11px] font-bold tracking-[0.3em] text-ink-soft">VoteMatch · 結算</div>
+      <div className="text-[11px] font-bold tracking-[0.3em] text-ink-soft">VoteMatch · {region.label} 結算</div>
       <div className="mt-2 font-serif text-[40px] font-black leading-none">
         {liked.length}<span className="ml-1 text-[18px]">/ {cards.length} 張有感</span>
       </div>
       <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-        大安區 {DAAN_META.villages} 個里，你對 {byLi.size} 個里的候選人有感；收藏了 {saved.length} 位。
+        {villagesTotal} 個里，你對 {byVillage.size} 個里的候選人有感；收藏了 {saved.length} 位。
       </p>
       {liked.length > 0 && (
         <ul className="mt-4 space-y-1.5">
-          {[...byLi].map(([li, cs]) => (
-            <li key={li} className="flex items-baseline gap-2 border-b border-paper-line pb-1.5 text-[14px]">
-              <span className="w-14 shrink-0 font-bold text-ink-soft">{li}里</span>
+          {[...byVillage].map(([village, cs]) => (
+            <li key={village} className="flex items-baseline gap-2 border-b border-paper-line pb-1.5 text-[14px]">
+              <span className="w-16 shrink-0 font-bold text-ink-soft">{village}</span>
               <span className="font-serif font-black">{cs.map((c) => c.name).join('、')}</span>
             </li>
           ))}
