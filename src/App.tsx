@@ -241,9 +241,14 @@ export default function App() {
       <header className="mt-5 border-[3px] border-ink bg-ink text-paper">
         <div className="flex items-center justify-between border-b border-paper/30 px-4 py-1 text-[11px] font-medium tracking-widest text-gold-soft">
           <span>選 里 長 速 報 · Beta</span>
-          <a href="plan.html" className="underline decoration-dotted underline-offset-2 hover:text-paper">
-            🗺️ 選戰行程 →
-          </a>
+          <span className="flex items-center gap-3">
+            <a href="votematch.html" className="underline decoration-dotted underline-offset-2 hover:text-paper">
+              💘 頁面二 VoteMatch
+            </a>
+            <a href="plan.html" className="underline decoration-dotted underline-offset-2 hover:text-paper">
+              🗺️ 選戰行程 →
+            </a>
+          </span>
         </div>
         <div className="px-4 py-4 text-center">
           <h1 className="font-serif text-[34px] leading-none font-black tracking-tight">

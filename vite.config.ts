@@ -14,6 +14,7 @@ export default defineConfig({
         east: resolve(__dirname, 'east.html'), // 彰化東區 22 里限定選情站（名單轉換頁）
         shop: resolve(__dirname, 'shop.html'), // 友善商家地圖（候選人 CRM 第一版）
         swipe: resolve(__dirname, 'swipe.html'), // 看板牆：候選人左滑右滑（彰化東區 22 里模板）
+        votematch: resolve(__dirname, 'votematch.html'), // VoteMatch 頁面二：115 年大安區候選人左滑右滑／收藏
       },
     },
   },
