@@ -5,6 +5,7 @@
 // 抓過的縣市留在記憶體快取，切換回來不重抓。
 
 import type { Village } from './calc';
+import type { BaseFile } from './baseline';
 
 export interface VillageRow extends Village {
   county: string;
@@ -87,6 +88,17 @@ export function loadCounty(code: string): Promise<VillageRow[]> {
     // 載入失敗就從快取移除，讓使用者重選時能重試
     p.catch(() => countyCache.delete(code));
     countyCache.set(code, p);
+  }
+  return p;
+}
+
+// 基準定位（大專以上／所得中位數＋全臺分位；etl/bake_baseline.mjs 烘焙，無檔回 null 自動降級）
+const baseCache = new Map<string, Promise<BaseFile | null>>();
+export function loadBase(code: string): Promise<BaseFile | null> {
+  let p = baseCache.get(code);
+  if (!p) {
+    p = getJson<BaseFile>(`base/${code}.json`).catch(() => null);
+    baseCache.set(code, p);
   }
   return p;
 }

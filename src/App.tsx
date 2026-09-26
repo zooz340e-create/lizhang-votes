@@ -7,7 +7,8 @@ import {
 } from './lib/calc';
 import { shareCard } from './lib/shareCard';
 import PollCard, { SIGNUP_FORM } from './PollCard';
-import { loadIndex, loadCounty, loadDemo, villageDemo, type VillageRow, type DataIndex, type DemoFile } from './lib/data';
+import { loadIndex, loadCounty, loadDemo, loadBase, villageDemo, type VillageRow, type DataIndex, type DemoFile } from './lib/data';
+import { position, prOf, type Axis, type BaseFile } from './lib/baseline';
 
 const nf = (n: number) => n.toLocaleString('zh-TW');
 
@@ -108,6 +109,13 @@ function Dropdown({
   );
 }
 
+// ⑤ 基準定位：三軸的顯示方式（高於中位數時條用的顏色、數值格式、動詞）
+const AXIS_META: Record<Axis, { label: string; fmt: (n: number) => string; verb: string; hiColor: string }> = {
+  edu: { label: '大專以上比例', fmt: (n) => `${n}%`, verb: '學歷高於', hiColor: 'var(--color-gold)' },
+  inc: { label: '每戶所得中位數', fmt: (n) => `${(n / 10).toFixed(1)} 萬`, verb: '所得高於', hiColor: 'var(--color-gold)' },
+  aging: { label: '老化指數', fmt: (n) => `${n}`, verb: '老化程度高於', hiColor: 'var(--color-campaign)' },
+};
+
 // ── 小元件 ──────────────────────────────────────────────
 function SectionTag({ no, label }: { no: string; label: string }) {
   return (
@@ -159,6 +167,7 @@ export default function App() {
   const [district, setDistrict] = useState('');
   const [code, setCode] = useState('');
   const [demo, setDemo] = useState<DemoFile | null>(null);
+  const [base, setBase] = useState<BaseFile | null>(null);
   const [cardBusy, setCardBusy] = useState(false);
 
   // 首屏只載縣市清單（約 2KB）
@@ -194,9 +203,10 @@ export default function App() {
 
   // 里況資料（試營運縣市才有檔案，無檔自動缺席）
   useEffect(() => {
-    if (!county) { setDemo(null); return; }
+    if (!county) { setDemo(null); setBase(null); return; }
     let cancelled = false;
     loadDemo(county).then((d) => { if (!cancelled) setDemo(d); });
+    loadBase(county).then((b) => { if (!cancelled) setBase(b); });
     return () => { cancelled = true; };
   }, [county]);
 
@@ -564,56 +574,127 @@ export default function App() {
           </details>
         </Panel>
 
-        {/* 里況速覽：TESAS 年齡結構（試營運縣市才有） */}
+        {/* ⑤ 基準定位：大專以上／所得／老化 對照同區與全臺 → 里型與痛點推論 */}
         {(() => {
           const d = villageDemo(demo, v.district, v.village);
-          if (!d) return null;
-          const seg = [
+          const b = base?.villages[`${v.district}|${v.village}`];
+          if (!d && !b) return null;
+          const pos = base ? position(base, v.district, b, d?.aging) : null;
+          const seg = d ? [
             { label: '幼年 0–14', cnt: d.young, per: d.young_p, color: 'var(--color-gold)' },
             { label: '青壯 15–64', cnt: d.work, per: d.work_p, color: 'var(--color-ink)' },
             { label: '高齡 65+', cnt: d.old, per: d.old_p, color: 'var(--color-campaign)' },
-          ];
+          ] : [];
+          const arch = pos?.archetype;
           return (
             <Panel>
               <div className="flex items-center justify-between">
-                <SectionTag no="⑤" label="這個里的長相" />
-                <span className="bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-soft">全臺 · 民國 {d.y} 年{d.m ? ` ${d.m} 月` : ''}</span>
+                <SectionTag no="⑤" label="基準定位" />
+                <span className="bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-soft">對照同區與全臺各里</span>
               </div>
-              <div className="mt-4 flex h-7 w-full overflow-hidden">
-                {seg.map((s) => (
-                  <div key={s.label} className="h-full" style={{ width: `${s.per}%`, background: s.color }} title={`${s.label} ${s.per}%`} />
-                ))}
-              </div>
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                {seg.map((s) => (
-                  <span key={s.label} className="flex items-center gap-1.5 text-xs text-ink-soft">
-                    <span className="h-2.5 w-2.5 shrink-0" style={{ background: s.color }} />
-                    {s.label}：<b className="font-serif text-ink tabular-nums">{s.per}%</b>（{nf(s.cnt)} 人）
-                  </span>
-                ))}
-              </div>
-              {d.ta_p !== undefined && (
-                <div className="mt-3 flex gap-3">
-                  <div className="flex-1 border-[3px] border-ink bg-paper p-2 text-center">
-                    <p className="text-[11px] font-bold text-ink-soft">30–49 歲（青壯主力）</p>
-                    <p className="font-serif text-xl font-black text-ink tabular-nums">{d.ta_p}%</p>
-                    <p className="text-[11px] text-ink-soft tabular-nums">{nf(d.ta ?? 0)} 人</p>
+
+              {arch && (
+                <div className="mt-4 bg-ink p-4 text-paper">
+                  <p className="text-[11px] font-bold tracking-widest text-gold-soft">依數據推論，這是一個</p>
+                  <p className="mt-1 font-serif text-2xl font-black">{arch.name}</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-paper/85">{arch.portrait}</p>
+                </div>
+              )}
+
+              {pos && pos.axes.length > 0 && (
+                <div className="mt-4 space-y-4">
+                  {pos.axes.map((a) => {
+                    const m = AXIS_META[a.axis];
+                    const dPr = a.district !== null && base ? prOf(a.district, base.pct[a.axis]) : null;
+                    const up = a.district !== null && a.value >= a.district;
+                    return (
+                      <div key={a.axis}>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-[13px] font-bold text-ink">{m.label}</span>
+                          <span className="font-serif text-xl font-black tabular-nums text-ink">{m.fmt(a.value)}</span>
+                        </div>
+                        <div className="relative mt-1.5 h-3 w-full bg-paper-line" aria-hidden>
+                          <div className="absolute inset-y-0 left-0" style={{ width: `${a.pr}%`, background: a.high ? m.hiColor : 'var(--color-ink-soft)' }} />
+                          {dPr !== null && (
+                            <div className="absolute -inset-y-1 w-[3px] bg-gold" style={{ left: `calc(${dPr}% - 1.5px)` }} title="同區" />
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-ink-soft">
+                          {m.verb}全臺 <b className="tabular-nums text-ink">{a.pr}%</b> 的里
+                          {a.district !== null && (
+                            <>　·　<span className="inline-block h-2 w-[3px] bg-gold align-middle" /> 同區 {m.fmt(a.district)}（{up ? '▲ 本里較高' : '▼ 本里較低'}）</>
+                          )}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {v.adj && (
+                <p className="mt-3 text-xs text-ink-soft">＊115 年行政區調整里：學歷、所得的官方統計還是調整前的範圍，暫不顯示、也不推論里型。</p>
+              )}
+
+              {arch && (
+                <div className="mt-4 border-[3px] border-ink">
+                  <div className="border-b-[3px] border-ink bg-paper px-3 py-2">
+                    <p className="text-[11px] font-black tracking-widest text-campaign">可能的痛點</p>
+                    <ul className="mt-1 space-y-0.5 text-[13px] leading-relaxed text-ink">
+                      {arch.pains.map((p) => <li key={p}>・{p}</li>)}
+                    </ul>
                   </div>
-                  <div className="flex-1 border-[3px] border-ink bg-paper p-2 text-center">
-                    <p className="text-[11px] font-bold text-ink-soft">60 歲以上</p>
-                    <p className="font-serif text-xl font-black text-campaign tabular-nums">{d.o60_p}%</p>
-                    <p className="text-[11px] text-ink-soft tabular-nums">{nf(d.o60 ?? 0)} 人</p>
+                  <div className="grid sm:grid-cols-2">
+                    <div className="border-b-[3px] border-ink p-3 sm:border-b-0 sm:border-r-[3px]">
+                      <p className="text-[11px] font-black tracking-widest text-ink-soft">🎯 給候選人</p>
+                      <p className="mt-1 text-[13px] leading-relaxed text-ink">{arch.forCandidate}</p>
+                    </div>
+                    <div className="p-3">
+                      <p className="text-[11px] font-black tracking-widest text-ink-soft">🗳️ 給選民</p>
+                      <p className="mt-1 text-[13px] leading-relaxed text-ink">{arch.forVoter}</p>
+                    </div>
                   </div>
                 </div>
               )}
-              <p className="mt-3 border-l-[3px] border-gold bg-paper px-3 py-2 text-[13px] leading-relaxed text-ink-soft">
-                老化指數 <b className="font-serif text-ink tabular-nums">{d.aging}</b>
-                {d.aging >= 200 ? '——每 1 位小孩對上 2 位以上長輩，長照與共餐是這裡的硬需求。' :
-                 d.aging >= 100 ? '——長輩已多於小孩，高齡議題正在變成日常。' :
-                 '——小孩還比長輩多，是相對年輕的社區。'}
-              </p>
-              <p className="mt-2 text-[11px] text-ink-soft/60">
-                資料：{demo?.meta.source}（民國 {d.y} 年{d.m ? ` ${d.m} 月` : ''}，僅供趨勢參考）
+              {arch && (
+                <p className="mt-2 text-[11px] text-ink-soft/70">＊以上是依三項官方統計（各以全臺里的中位數切高低）做的推論，不是民調；實際情況請走訪驗證。</p>
+              )}
+
+              {d && (
+                <details className="mt-4 border-t-2 border-paper-line pt-3">
+                  <summary className="cursor-pointer text-[13px] font-bold text-ink">年齡結構細節（民國 {d.y} 年{d.m ? ` ${d.m} 月` : ''}）</summary>
+                  <div className="mt-3 flex h-7 w-full overflow-hidden">
+                    {seg.map((s) => (
+                      <div key={s.label} className="h-full" style={{ width: `${s.per}%`, background: s.color }} title={`${s.label} ${s.per}%`} />
+                    ))}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                    {seg.map((s) => (
+                      <span key={s.label} className="flex items-center gap-1.5 text-xs text-ink-soft">
+                        <span className="h-2.5 w-2.5 shrink-0" style={{ background: s.color }} />
+                        {s.label}：<b className="font-serif text-ink tabular-nums">{s.per}%</b>（{nf(s.cnt)} 人）
+                      </span>
+                    ))}
+                  </div>
+                  {d.ta_p !== undefined && (
+                    <div className="mt-3 flex gap-3">
+                      <div className="flex-1 border-[3px] border-ink bg-paper p-2 text-center">
+                        <p className="text-[11px] font-bold text-ink-soft">30–49 歲（青壯主力）</p>
+                        <p className="font-serif text-xl font-black text-ink tabular-nums">{d.ta_p}%</p>
+                        <p className="text-[11px] text-ink-soft tabular-nums">{nf(d.ta ?? 0)} 人</p>
+                      </div>
+                      <div className="flex-1 border-[3px] border-ink bg-paper p-2 text-center">
+                        <p className="text-[11px] font-bold text-ink-soft">60 歲以上</p>
+                        <p className="font-serif text-xl font-black text-campaign tabular-nums">{d.o60_p}%</p>
+                        <p className="text-[11px] text-ink-soft tabular-nums">{nf(d.o60 ?? 0)} 人</p>
+                      </div>
+                    </div>
+                  )}
+                </details>
+              )}
+
+              <p className="mt-3 text-[11px] leading-relaxed text-ink-soft/60">
+                資料：{d && <>{demo?.meta.source}（民國 {d.y} 年{d.m ? ` ${d.m} 月` : ''}）；</>}
+                {base && <>{base.meta.edu_source}；{base.meta.inc_source}。</>}
+                大專以上＝專科以上畢業 ÷ 15 歲以上人口；所得＝每戶（納稅單位）綜合所得總額中位數，不是個人薪資，且不含免稅所得（例如部分退休金）。僅供趨勢參考。
               </p>
             </Panel>
           );
